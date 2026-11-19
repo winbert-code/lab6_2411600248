@@ -25,11 +25,15 @@ return Application::configure(basePath: dirname(__DIR__))
         // link) should not dead-end at a 404. Return to the page the visitor was
         // on, or to the dashboard when there is no safe internal referrer.
         $exceptions->render(function (NotFoundHttpException $exception, Request $request) {
-            if ($request->expectsJson()) {
+            // API and AJAX callers keep their normal JSON 404 response.
+            if ($request->expectsJson() || $request->is('api/*')) {
                 return null;
             }
 
-            $previous = url()->previous();
+            // Only a real Referer header counts as the "current page". When a
+            // URL is typed directly the browser sends none, so go to dashboard
+            // (which sends guests on to login).
+            $previous = $request->header('referer');
             $base = rtrim(url('/'), '/');
 
             if (! is_string($previous) || $previous === '' || $previous === $request->fullUrl()) {

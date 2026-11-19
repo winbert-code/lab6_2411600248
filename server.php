@@ -11,9 +11,12 @@
 
 $publicPath = getcwd();
 
-$uri = urldecode(
-    parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?? ''
-);
+/*
+ * Use the raw request path. parse_url() treats a leading // as a
+ * scheme-relative URL and returns an empty path for bare combos such as
+ * /////....///, which would otherwise slip past the malformed-path check.
+ */
+$uri = urldecode(explode('?', $_SERVER['REQUEST_URI'], 2)[0]);
 
 if (preg_match('#/{2,}|\.{2,}#', $uri)) {
     // Keep the clean part of the link, e.g. /products//////.......////// -> /products.
@@ -29,9 +32,10 @@ if (preg_match('#/{2,}|\.{2,}#', $uri)) {
         $scheme = (! empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
         $host = $_SERVER['HTTP_HOST'] ?? '127.0.0.1:8001';
         $base = $scheme.'://'.$host;
-        $referer = filter_input(INPUT_SERVER, 'HTTP_REFERER', FILTER_VALIDATE_URL);
+        $referer = $_SERVER['HTTP_REFERER'] ?? '';
 
-        $target = ($referer && ($referer === $base || str_starts_with($referer, $base.'/')))
+        $target = (filter_var($referer, FILTER_VALIDATE_URL)
+            && ($referer === $base || str_starts_with($referer, $base.'/')))
             ? $referer
             : '/dashboard';
     }

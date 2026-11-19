@@ -80,7 +80,7 @@ Route::middleware('auth')->group(function () {
  */
 Route::fallback(function () {
     $safeTarget = route('dashboard');
-    $previous = url()->previous();
+    $previous = request()->header('referer');
     $base = rtrim(url('/'), '/');
 
     if (! is_string($previous) || $previous === '' || $previous === url()->full()) {
