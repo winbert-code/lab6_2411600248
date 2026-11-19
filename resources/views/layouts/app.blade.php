@@ -29,9 +29,33 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('inventory.*') ? 'active' : '' }}"
+                           href="{{ route('inventory.index') }}">
+                            <i class="bi bi-clipboard-data"></i> Inventory
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link {{ request()->routeIs('products.*') ? 'active' : '' }}"
                            href="{{ route('products.index') }}">
-                            <i class="bi bi-box-seam"></i> Inventory
+                            <i class="bi bi-box-seam"></i> Products
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('categories.*') ? 'active' : '' }}"
+                           href="{{ route('categories.index') }}">
+                            <i class="bi bi-tags"></i> Categories
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('brands.*') ? 'active' : '' }}"
+                           href="{{ route('brands.index') }}">
+                            <i class="bi bi-patch-check"></i> Brands
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}"
+                           href="{{ route('users.index') }}">
+                            <i class="bi bi-people"></i> Users
                         </a>
                     </li>
                     <li class="nav-item">

@@ -16,6 +16,7 @@ class BrandSeeder extends Seeder
                 [
                     'slug' => Str::slug($name),
                     'description' => "Products from the {$name} brand.",
+                    'status' => Brand::STATUS_ACTIVE,
                 ],
             );
         }

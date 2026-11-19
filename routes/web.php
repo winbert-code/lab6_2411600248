@@ -2,11 +2,15 @@
 
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\BrandController;
+use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\InventoryTransactionController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn () => redirect()->route('dashboard'));
@@ -25,6 +29,15 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Lab 5 modules: inventory overview, brands, categories and user accounts.
+    Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
+    Route::patch('categories/{category}/restore', [CategoryController::class, 'restore'])->name('categories.restore');
+    Route::resource('categories', CategoryController::class)->except(['show']);
+    Route::patch('brands/{brand}/restore', [BrandController::class, 'restore'])->name('brands.restore');
+    Route::resource('brands', BrandController::class)->except(['show']);
+    Route::patch('users/{user}/restore', [UserController::class, 'restore'])->name('users.restore');
+    Route::resource('users', UserController::class)->except(['show']);
 
     Route::patch('notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
     Route::patch('notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');

@@ -16,6 +16,7 @@ class CategorySeeder extends Seeder
                 [
                     'slug' => Str::slug($name),
                     'description' => "Computer parts in the {$name} category.",
+                    'status' => Category::STATUS_ACTIVE,
                 ],
             );
         }

@@ -60,8 +60,8 @@ class ProductController extends Controller
     {
         return view('products.create', [
             'product' => new Product(),
-            'brands' => Brand::orderBy('name')->get(),
-            'categories' => Category::orderBy('name')->get(),
+            'brands' => $this->brandOptions(new Product()),
+            'categories' => $this->categoryOptions(new Product()),
         ]);
     }
 
@@ -125,8 +125,8 @@ class ProductController extends Controller
     {
         return view('products.edit', [
             'product' => $product,
-            'brands' => Brand::orderBy('name')->get(),
-            'categories' => Category::orderBy('name')->get(),
+            'brands' => $this->brandOptions($product),
+            'categories' => $this->categoryOptions($product),
         ]);
     }
 
@@ -179,5 +179,35 @@ class ProductController extends Controller
 
         return redirect()->route('products.index')
             ->with('success', "{$name} is active again.");
+    }
+
+    /**
+     * Inactive brands cannot be chosen for new stock, but an inactive brand
+     * already assigned to this product must stay visible on the edit form.
+     */
+    private function brandOptions(Product $product)
+    {
+        $brands = Brand::active()->orderBy('name')->get();
+
+        if ($product->brand && ! $product->brand->isActive()) {
+            $brands->push($product->brand);
+        }
+
+        return $brands->sortBy('name')->values();
+    }
+
+    /**
+     * Inactive categories cannot be chosen for new stock, but an inactive
+     * category already assigned to this product must stay visible on edit.
+     */
+    private function categoryOptions(Product $product)
+    {
+        $categories = Category::active()->orderBy('name')->get();
+
+        if ($product->category && ! $product->category->isActive()) {
+            $categories->push($product->category);
+        }
+
+        return $categories->sortBy('name')->values();
     }
 }

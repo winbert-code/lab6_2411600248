@@ -40,11 +40,11 @@ Laravel MVC implementation of Laboratory Exercise 5, using the suggested theme
    ```powershell
    C:\xampp2\php\php.exe artisan migrate:fresh --seed
    ```
-4. Run the app:
+4. Run the app on port 8001 (port 8000 is kept for the Lab 5 project):
    ```powershell
-   C:\xampp2\php\php.exe artisan serve --host=127.0.0.1 --port=8000
+   C:\xampp2\php\php.exe artisan serve --host=127.0.0.1 --port=8001
    ```
-5. Open <http://127.0.0.1:8000> and log in with:
+5. Open <http://127.0.0.1:8001> and log in with:
 
    | Email | Password |
    | --- | --- |
@@ -56,27 +56,34 @@ Laravel MVC implementation of Laboratory Exercise 5, using the suggested theme
 | --- | --- |
 | Environment & DB config | Laravel 13 project, MySQL `.env`, migrations |
 | Authentication | Laravel `Auth` facade with custom login/register Blade views, hashed passwords, `remember me`, throttle on POST routes, guest/auth middleware |
+| Users & roles | `UserController` and `users/*` views: add users as admin, manager, staff or user, edit roles and passwords, deactivate/restore accounts, and filter by role/status; inactive users cannot log in and you cannot deactivate yourself |
 | Models & migrations | `User`, `Brand`, `Category`, `Product`, `InventoryTransaction`. Products belong to a brand and a category via foreign keys; unique SKU, casts, `active`/`inactive` status scopes, `lowStock`/`outOfStock` scopes, `stockStatus()` |
-| Brands & categories | First-class `brands` and `categories` tables with seeders; selectable on product create/edit and filterable on the inventory page |
+| Brands & categories | First-class `brands` and `categories` tables with their own pages under **Brands** and **Categories**; removing an item marks it inactive (never deletes it), and the restore button makes it available for stock again; inactive items are hidden from new-product dropdowns but kept for products already using them |
 | CRUD controller | `app\Http\Controllers\ProductController.php` (resource controller with implicit route binding) |
-| Validation | `StoreProductRequest` / `UpdateProductRequest` with custom messages, SKU uniqueness on create/update, normalized uppercase SKU |
-| Blade views | `layouts/app`, `layouts/guest`, dashboard, product index/create/edit/show, reusable `components/stock-badge`, shared product form |
-| Routes | `routes/web.php`: guest auth routes + auth-protected dashboard and `Route::resource('products', ...)` |
+| Validation | `StoreProductRequest` / `UpdateProductRequest` with custom messages, SKU uniqueness on create/update, normalized uppercase SKU, active brand/category validation |
+| Navigation | Dashboard, Inventory (stock overview), Products (CRUD + deactivate/restore), Categories (CRUD + deactivate/restore), Brands (CRUD + deactivate/restore), Users (roles + status), Transactions, Reports |
+| Blade views | `layouts/app`, `layouts/guest`, dashboard, inventory, product index/create/edit/show, category/brand/user CRUD views, reusable `components/stock-badge`, shared form partials |
+| Routes | `routes/web.php`: guest auth routes + auth-protected dashboard, inventory, resource routes for products, categories, brands and users, plus transactions, reports and notifications |
 | Dashboard with real data | `DashboardController` computes product count, low/out-of-stock counts, total inventory value, recent products, category totals, and chart data |
 | Seeder | `ProductSeeder` inserts 20 realistic computer parts across 10 categories, including low-stock and out-of-stock examples |
 | Theme integration | `public/css/app.css` CSS variables override Bootstrap defaults; same style on auth and app pages |
 | Stock audit trail | `inventory_transactions` table logs initial stock and quantity adjustments, shown on the product detail page |
 | Inactive products | The delete action sets `status` to `inactive` instead of removing rows; products and inventory history stay in the database and can be restored |
-| Testing | Verified login, dashboard statistics, inventory list, create + validation, edit, transaction logging, and deactivate/restore in a browser |
+| Testing | Verified login, dashboard statistics, inventory overview, product/category/brand CRUD, inactive brand/category restore, user roles, inactive-user login rejection, transaction logging, reports and deactivate/restore in a browser |
 
 ## Important files
 
 ```text
+app/Models/User.php
 app/Models/Product.php
 app/Models/Brand.php
 app/Models/Category.php
 app/Models/InventoryTransaction.php
 app/Http/Controllers/ProductController.php
+app/Http/Controllers/InventoryController.php
+app/Http/Controllers/BrandController.php
+app/Http/Controllers/CategoryController.php
+app/Http/Controllers/UserController.php
 app/Http/Controllers/DashboardController.php
 app/Http/Controllers/Auth/LoginController.php
 app/Http/Controllers/Auth/RegisterController.php
@@ -94,7 +101,13 @@ database/seeders/UserSeeder.php
 resources/views/layouts/app.blade.php
 resources/views/layouts/guest.blade.php
 resources/views/dashboard/index.blade.php
+resources/views/inventory/*.blade.php
 resources/views/products/*.blade.php
+resources/views/brands/*.blade.php
+resources/views/categories/*.blade.php
+resources/views/users/*.blade.php
+resources/views/transactions/*.blade.php
+resources/views/reports/*.blade.php
 public/css/app.css
 ```
 
