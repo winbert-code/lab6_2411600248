@@ -41,6 +41,18 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('purchase-orders.*') ? 'active' : '' }}"
+                           href="{{ route('purchase-orders.index') }}">
+                            <i class="bi bi-cart-plus"></i> Purchase Orders
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('sales-orders.*') ? 'active' : '' }}"
+                           href="{{ route('sales-orders.index') }}">
+                            <i class="bi bi-cart-check"></i> Sales Orders
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link {{ request()->routeIs('categories.*') ? 'active' : '' }}"
                            href="{{ route('categories.index') }}">
                             <i class="bi bi-tags"></i> Categories

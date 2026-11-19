@@ -23,7 +23,10 @@ if (preg_match('#/{2,}|\.{2,}#', $uri)) {
     $clean = preg_split('#(/{2,}|\.{2,})#', $uri, 2)[0] ?? '';
     $clean = rtrim($clean, '/');
 
-    $pages = ['dashboard', 'inventory', 'products', 'categories', 'brands', 'users', 'transactions', 'reports'];
+    $pages = [
+        'dashboard', 'inventory', 'products', 'purchase-orders', 'sales-orders',
+        'categories', 'brands', 'users', 'activity-logs', 'transactions', 'reports',
+    ];
     $firstSegment = explode('/', ltrim($clean, '/'))[0] ?? '';
 
     if ($clean !== '' && in_array($firstSegment, $pages, true)) {

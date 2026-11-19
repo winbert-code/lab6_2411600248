@@ -21,6 +21,10 @@ class ActivityLog extends Model
 
     public const MODULE_USER = 'User';
 
+    public const MODULE_PURCHASE_ORDER = 'Purchase Order';
+
+    public const MODULE_SALES_ORDER = 'Sales Order';
+
     public const ACTION_LOGGED_IN = 'Logged in';
 
     public const ACTION_LOGGED_OUT = 'Logged out';
@@ -35,12 +39,20 @@ class ActivityLog extends Model
 
     public const ACTION_RESTORED = 'Restored';
 
+    public const ACTION_RECEIVED = 'Received';
+
+    public const ACTION_COMPLETED = 'Completed';
+
+    public const ACTION_CANCELLED = 'Cancelled';
+
     public const MODULES = [
         self::MODULE_AUTH,
         self::MODULE_PRODUCT,
         self::MODULE_CATEGORY,
         self::MODULE_BRAND,
         self::MODULE_USER,
+        self::MODULE_PURCHASE_ORDER,
+        self::MODULE_SALES_ORDER,
     ];
 
     public const ACTIONS = [
@@ -51,6 +63,9 @@ class ActivityLog extends Model
         self::ACTION_UPDATED,
         self::ACTION_DEACTIVATED,
         self::ACTION_RESTORED,
+        self::ACTION_RECEIVED,
+        self::ACTION_COMPLETED,
+        self::ACTION_CANCELLED,
     ];
 
     protected $fillable = [
@@ -109,6 +124,8 @@ class ActivityLog extends Model
             self::MODULE_CATEGORY => route('categories.edit', $this->subject_id),
             self::MODULE_BRAND => route('brands.edit', $this->subject_id),
             self::MODULE_USER => route('users.edit', $this->subject_id),
+            self::MODULE_PURCHASE_ORDER => route('purchase-orders.show', $this->subject_id),
+            self::MODULE_SALES_ORDER => route('sales-orders.show', $this->subject_id),
             default => null,
         };
     }
@@ -116,7 +133,7 @@ class ActivityLog extends Model
     public function badgeClass(): string
     {
         return match ($this->action) {
-            self::ACTION_DEACTIVATED, self::ACTION_LOGGED_OUT => 'badge-inactive',
+            self::ACTION_DEACTIVATED, self::ACTION_LOGGED_OUT, self::ACTION_CANCELLED => 'badge-inactive',
             self::ACTION_UPDATED => 'bg-secondary',
             default => 'bg-success',
         };

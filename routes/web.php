@@ -10,7 +10,9 @@ use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\InventoryTransactionController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\SalesOrderController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -58,6 +60,56 @@ Route::middleware('auth')->group(function () {
 
     Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('reports/export', [ReportController::class, 'export'])->name('reports.export');
+
+    // Purchase and sales orders. Only inventory managers can write orders;
+    // everyone signed in can view them.
+    Route::get('purchase-orders', [PurchaseOrderController::class, 'index'])->name('purchase-orders.index');
+    Route::get('purchase-orders/create', [PurchaseOrderController::class, 'create'])
+        ->middleware('can:manage-inventory')
+        ->name('purchase-orders.create');
+    Route::post('purchase-orders', [PurchaseOrderController::class, 'store'])
+        ->middleware('can:manage-inventory')
+        ->name('purchase-orders.store');
+    Route::get('purchase-orders/{purchaseOrder}/edit', [PurchaseOrderController::class, 'edit'])
+        ->middleware('can:manage-inventory')
+        ->name('purchase-orders.edit');
+    Route::patch('purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'update'])
+        ->middleware('can:manage-inventory')
+        ->name('purchase-orders.update');
+    Route::delete('purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'destroy'])
+        ->middleware('can:manage-inventory')
+        ->name('purchase-orders.destroy');
+    Route::post('purchase-orders/{purchaseOrder}/receive', [PurchaseOrderController::class, 'receive'])
+        ->middleware('can:manage-inventory')
+        ->name('purchase-orders.receive');
+    Route::post('purchase-orders/{purchaseOrder}/cancel', [PurchaseOrderController::class, 'cancel'])
+        ->middleware('can:manage-inventory')
+        ->name('purchase-orders.cancel');
+    Route::get('purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'show'])->name('purchase-orders.show');
+
+    Route::get('sales-orders', [SalesOrderController::class, 'index'])->name('sales-orders.index');
+    Route::get('sales-orders/create', [SalesOrderController::class, 'create'])
+        ->middleware('can:manage-inventory')
+        ->name('sales-orders.create');
+    Route::post('sales-orders', [SalesOrderController::class, 'store'])
+        ->middleware('can:manage-inventory')
+        ->name('sales-orders.store');
+    Route::get('sales-orders/{salesOrder}/edit', [SalesOrderController::class, 'edit'])
+        ->middleware('can:manage-inventory')
+        ->name('sales-orders.edit');
+    Route::patch('sales-orders/{salesOrder}', [SalesOrderController::class, 'update'])
+        ->middleware('can:manage-inventory')
+        ->name('sales-orders.update');
+    Route::delete('sales-orders/{salesOrder}', [SalesOrderController::class, 'destroy'])
+        ->middleware('can:manage-inventory')
+        ->name('sales-orders.destroy');
+    Route::post('sales-orders/{salesOrder}/complete', [SalesOrderController::class, 'complete'])
+        ->middleware('can:manage-inventory')
+        ->name('sales-orders.complete');
+    Route::post('sales-orders/{salesOrder}/cancel', [SalesOrderController::class, 'cancel'])
+        ->middleware('can:manage-inventory')
+        ->name('sales-orders.cancel');
+    Route::get('sales-orders/{salesOrder}', [SalesOrderController::class, 'show'])->name('sales-orders.show');
 
     Route::get('transactions', [InventoryTransactionController::class, 'index'])->name('transactions.index');
     Route::get('transactions/create', [InventoryTransactionController::class, 'create'])
