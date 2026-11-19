@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -61,13 +62,20 @@ class UserController extends Controller
             'password' => ['required', 'confirmed', Password::min(8)],
         ]);
 
-        User::create([
+        $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
             'role' => $data['role'],
             'status' => User::STATUS_ACTIVE,
             'password' => Hash::make($data['password']),
         ]);
+
+        ActivityLog::record(
+            ActivityLog::MODULE_USER,
+            ActivityLog::ACTION_CREATED,
+            "{$user->name} was added as {$user->role}.",
+            $user,
+        );
 
         return redirect()->route('users.index')
             ->with('success', "{$data['name']} was added as {$data['role']}.");
@@ -97,6 +105,13 @@ class UserController extends Controller
 
         $user->save();
 
+        ActivityLog::record(
+            ActivityLog::MODULE_USER,
+            ActivityLog::ACTION_UPDATED,
+            "{$user->name} was updated to {$user->role} access.",
+            $user,
+        );
+
         return redirect()->route('users.index')
             ->with('success', "{$user->name} was updated.");
     }
@@ -110,6 +125,13 @@ class UserController extends Controller
 
         $user->deactivate();
 
+        ActivityLog::record(
+            ActivityLog::MODULE_USER,
+            ActivityLog::ACTION_DEACTIVATED,
+            "{$user->name}'s account was deactivated.",
+            $user,
+        );
+
         return redirect()->route('users.index')
             ->with('success', "{$user->name} was deactivated.");
     }
@@ -117,6 +139,13 @@ class UserController extends Controller
     public function restore(User $user): RedirectResponse
     {
         $user->activate();
+
+        ActivityLog::record(
+            ActivityLog::MODULE_USER,
+            ActivityLog::ACTION_RESTORED,
+            "{$user->name}'s account was restored.",
+            $user,
+        );
 
         return redirect()->route('users.index')
             ->with('success', "{$user->name} was restored.");

@@ -61,13 +61,14 @@ Laravel MVC implementation of Laboratory Exercise 5, using the suggested theme
 | Brands & categories | First-class `brands` and `categories` tables with their own pages under **Brands** and **Categories**; removing an item marks it inactive (never deletes it), and the restore button makes it available for stock again; inactive items are hidden from new-product dropdowns but kept for products already using them |
 | CRUD controller | `app\Http\Controllers\ProductController.php` (resource controller with implicit route binding) |
 | Validation | `StoreProductRequest` / `UpdateProductRequest` with custom messages, SKU uniqueness on create/update, normalized uppercase SKU, active brand/category validation |
-| Navigation | Dashboard, Inventory (stock overview), Products (CRUD + deactivate/restore), Categories (CRUD + deactivate/restore), Brands (CRUD + deactivate/restore), Users (roles + status), Transactions, Reports |
-| Blade views | `layouts/app`, `layouts/guest`, dashboard, inventory, product index/create/edit/show, category/brand/user CRUD views, reusable `components/stock-badge`, shared form partials |
-| Routes | `routes/web.php`: guest auth routes + auth-protected dashboard, inventory, resource routes for products, categories, brands and users, plus transactions, reports and notifications |
+| Navigation | Dashboard, Inventory (stock overview), Products (CRUD + deactivate/restore), Categories (CRUD + deactivate/restore), Brands (CRUD + deactivate/restore), Users (roles + status), Activity Log, Transactions, Reports |
+| Blade views | `layouts/app`, `layouts/guest`, dashboard, inventory, product index/create/edit/show, category/brand/user CRUD views, activity log, reusable `components/stock-badge`, shared form partials |
+| Routes | `routes/web.php`: guest auth routes + auth-protected dashboard, inventory, resource routes for products, categories, brands and users, plus activity log, transactions, reports and notifications |
 | Dashboard with real data | `DashboardController` computes product count, low/out-of-stock counts, total inventory value, recent products, category totals, and chart data |
 | Seeder | `ProductSeeder` inserts 20 realistic computer parts across 10 categories, including low-stock and out-of-stock examples |
 | Theme integration | `public/css/app.css` CSS variables override Bootstrap defaults; same style on auth and app pages |
 | Stock audit trail | `inventory_transactions` table logs initial stock and quantity adjustments, shown on the product detail page |
+| Activity log (audit log) | `ActivityLog` model and `activity-logs.index` page (ported from Lab 5) record sign-ins, registrations and every create/update/deactivate/restore action across products, categories, brands and users, with search and module/action/user filters and a recent-activity panel on the dashboard |
 | Inactive products | The delete action sets `status` to `inactive` instead of removing rows; products and inventory history stay in the database and can be restored |
 | Testing | Verified login, dashboard statistics, inventory overview, product/category/brand CRUD, inactive brand/category restore, user roles, inactive-user login rejection, transaction logging, reports and deactivate/restore in a browser |
 
@@ -75,11 +76,13 @@ Laravel MVC implementation of Laboratory Exercise 5, using the suggested theme
 
 ```text
 app/Models/User.php
+app/Models/ActivityLog.php
 app/Models/Product.php
 app/Models/Brand.php
 app/Models/Category.php
 app/Models/InventoryTransaction.php
 app/Http/Controllers/ProductController.php
+app/Http/Controllers/ActivityLogController.php
 app/Http/Controllers/InventoryController.php
 app/Http/Controllers/BrandController.php
 app/Http/Controllers/CategoryController.php
@@ -101,6 +104,7 @@ database/seeders/UserSeeder.php
 resources/views/layouts/app.blade.php
 resources/views/layouts/guest.blade.php
 resources/views/dashboard/index.blade.php
+resources/views/activity-logs/*.blade.php
 resources/views/inventory/*.blade.php
 resources/views/products/*.blade.php
 resources/views/brands/*.blade.php

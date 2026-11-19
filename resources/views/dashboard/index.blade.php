@@ -210,6 +210,33 @@
                     </div>
                 </div>
             </div>
+
+            <div class="col-12">
+                <div class="card app-card">
+                    <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between">
+                        <div>
+                            <h2 class="h5 fw-bold mb-0">Recent activity</h2>
+                            <p class="text-muted small mb-0">The latest actions recorded in the system.</p>
+                        </div>
+                        <a href="{{ route('activity-logs.index') }}" class="small text-decoration-none">See all</a>
+                    </div>
+                    <div class="list-group list-group-flush px-4">
+                        @forelse ($recentActivity as $log)
+                            <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                <span>
+                                    <span class="fw-semibold d-block">{{ $log->description }}</span>
+                                    <span class="small text-muted">
+                                        {{ $log->user?->name ?? 'System' }} &middot; {{ $log->created_at?->diffForHumans() }}
+                                    </span>
+                                </span>
+                                <span class="badge {{ $log->badgeClass() }}">{{ $log->action }}</span>
+                            </div>
+                        @empty
+                            <p class="text-muted px-0 py-3 mb-0">No activity recorded yet.</p>
+                        @endforelse
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 @endsection

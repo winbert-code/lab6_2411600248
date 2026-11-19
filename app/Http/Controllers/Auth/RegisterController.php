@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\ActivityLog;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -25,11 +26,19 @@ class RegisterController extends Controller
             'password' => ['required', 'confirmed', Password::min(8)],
         ]);
 
-        User::create([
+        $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
         ]);
+
+        ActivityLog::record(
+            ActivityLog::MODULE_USER,
+            ActivityLog::ACTION_REGISTERED,
+            $user->name.' created an account.',
+            $user,
+            $user,
+        );
 
         return redirect()->route('login')
             ->with('success', 'Account created. Please log in with your new credentials.');

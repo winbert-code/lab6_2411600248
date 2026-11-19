@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\BrandController;
@@ -38,6 +39,9 @@ Route::middleware('auth')->group(function () {
     Route::resource('brands', BrandController::class)->except(['show']);
     Route::patch('users/{user}/restore', [UserController::class, 'restore'])->name('users.restore');
     Route::resource('users', UserController::class)->except(['show']);
+
+    // Lab 5 activity log (audit trail) for sign-ins and inventory changes.
+    Route::get('/activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
 
     Route::patch('notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
     Route::patch('notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');

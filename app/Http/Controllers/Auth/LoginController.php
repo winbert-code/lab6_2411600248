@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\ActivityLog;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -35,6 +36,12 @@ class LoginController extends Controller
 
             $request->session()->regenerate();
 
+            ActivityLog::record(
+                ActivityLog::MODULE_AUTH,
+                ActivityLog::ACTION_LOGGED_IN,
+                Auth::user()->name.' signed in.',
+            );
+
             return redirect()->intended(route('dashboard'))
                 ->with('success', 'Welcome back to ByteStock!');
         }
@@ -46,6 +53,18 @@ class LoginController extends Controller
 
     public function logout(Request $request): RedirectResponse
     {
+        $user = Auth::user();
+
+        if ($user) {
+            ActivityLog::record(
+                ActivityLog::MODULE_AUTH,
+                ActivityLog::ACTION_LOGGED_OUT,
+                $user->name.' signed out.',
+                null,
+                $user,
+            );
+        }
+
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();

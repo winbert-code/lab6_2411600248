@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
 use App\Models\Brand;
 use App\Models\Product;
 use Illuminate\Contracts\View\View;
@@ -45,12 +46,19 @@ class BrandController extends Controller
             'description' => ['nullable', 'string'],
         ]);
 
-        Brand::create([
+        $brand = Brand::create([
             'name' => $data['name'],
             'slug' => $this->uniqueSlug($data['name'], $data['slug'] ?? null),
             'description' => $data['description'] ?? null,
             'status' => Brand::STATUS_ACTIVE,
         ]);
+
+        ActivityLog::record(
+            ActivityLog::MODULE_BRAND,
+            ActivityLog::ACTION_CREATED,
+            "{$brand->name} was added as a brand.",
+            $brand,
+        );
 
         return redirect()->route('brands.index')
             ->with('success', "{$data['name']} was added as a brand.");
@@ -75,6 +83,13 @@ class BrandController extends Controller
             'description' => $data['description'] ?? null,
         ]);
 
+        ActivityLog::record(
+            ActivityLog::MODULE_BRAND,
+            ActivityLog::ACTION_UPDATED,
+            "{$brand->name} brand details were updated.",
+            $brand,
+        );
+
         return redirect()->route('brands.index')
             ->with('success', "{$brand->name} was updated.");
     }
@@ -84,6 +99,13 @@ class BrandController extends Controller
         $name = $brand->name;
         $brand->deactivate();
 
+        ActivityLog::record(
+            ActivityLog::MODULE_BRAND,
+            ActivityLog::ACTION_DEACTIVATED,
+            "{$name} brand was deactivated. Its products were kept.",
+            $brand,
+        );
+
         return redirect()->route('brands.index')
             ->with('success', "{$name} was deactivated. Its products were kept and you can restore it anytime.");
     }
@@ -91,6 +113,13 @@ class BrandController extends Controller
     public function restore(Brand $brand): RedirectResponse
     {
         $brand->activate();
+
+        ActivityLog::record(
+            ActivityLog::MODULE_BRAND,
+            ActivityLog::ACTION_RESTORED,
+            "{$brand->name} brand was restored for stock again.",
+            $brand,
+        );
 
         return redirect()->route('brands.index')
             ->with('success', "{$brand->name} was restored and is available for stock again.");

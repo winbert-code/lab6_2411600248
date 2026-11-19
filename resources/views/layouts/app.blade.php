@@ -59,6 +59,12 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('activity-logs.*') ? 'active' : '' }}"
+                           href="{{ route('activity-logs.index') }}">
+                            <i class="bi bi-clock-history"></i> Activity Log
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link {{ request()->routeIs('transactions.*') ? 'active' : '' }}"
                            href="{{ route('transactions.index') }}">
                             <i class="bi bi-arrow-left-right"></i> Transactions

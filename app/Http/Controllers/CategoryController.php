@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Contracts\View\View;
@@ -45,12 +46,19 @@ class CategoryController extends Controller
             'description' => ['nullable', 'string'],
         ]);
 
-        Category::create([
+        $category = Category::create([
             'name' => $data['name'],
             'slug' => $this->uniqueSlug($data['name'], $data['slug'] ?? null),
             'description' => $data['description'] ?? null,
             'status' => Category::STATUS_ACTIVE,
         ]);
+
+        ActivityLog::record(
+            ActivityLog::MODULE_CATEGORY,
+            ActivityLog::ACTION_CREATED,
+            "{$category->name} was added as a category.",
+            $category,
+        );
 
         return redirect()->route('categories.index')
             ->with('success', "{$data['name']} was added as a category.");
@@ -75,6 +83,13 @@ class CategoryController extends Controller
             'description' => $data['description'] ?? null,
         ]);
 
+        ActivityLog::record(
+            ActivityLog::MODULE_CATEGORY,
+            ActivityLog::ACTION_UPDATED,
+            "{$category->name} category details were updated.",
+            $category,
+        );
+
         return redirect()->route('categories.index')
             ->with('success', "{$category->name} was updated.");
     }
@@ -84,6 +99,13 @@ class CategoryController extends Controller
         $name = $category->name;
         $category->deactivate();
 
+        ActivityLog::record(
+            ActivityLog::MODULE_CATEGORY,
+            ActivityLog::ACTION_DEACTIVATED,
+            "{$name} category was deactivated. Its products were kept.",
+            $category,
+        );
+
         return redirect()->route('categories.index')
             ->with('success', "{$name} was deactivated. Its products were kept and you can restore it anytime.");
     }
@@ -91,6 +113,13 @@ class CategoryController extends Controller
     public function restore(Category $category): RedirectResponse
     {
         $category->activate();
+
+        ActivityLog::record(
+            ActivityLog::MODULE_CATEGORY,
+            ActivityLog::ACTION_RESTORED,
+            "{$category->name} category was restored for stock again.",
+            $category,
+        );
 
         return redirect()->route('categories.index')
             ->with('success', "{$category->name} was restored and is available for stock again.");
