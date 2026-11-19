@@ -65,7 +65,7 @@ Laravel MVC implementation of Laboratory Exercise 5, using the suggested theme
 | Blade views | `layouts/app`, `layouts/guest`, dashboard, inventory, product index/create/edit/show, purchase/sales order index/form/show, category/brand/user CRUD views, activity log, reusable `components/stock-badge`, shared form partials |
 | Routes | `routes/web.php`: guest auth routes + auth-protected dashboard, inventory, resource routes for products, categories, brands and users, plus purchase/sales orders, activity log, transactions, reports and notifications |
 | Dashboard with real data | `DashboardController` computes product count, low/out-of-stock counts, total inventory value, recent products, category totals, and chart data |
-| Seeder | `ProductSeeder` inserts 20 realistic computer parts across 10 categories, including low-stock and out-of-stock examples |
+| Seeder | `ProductSeeder` inserts 20 realistic computer parts across 10 categories, including low-stock and out-of-stock examples; `OrderSeeder` adds 3 demo purchase orders and 5 demo sales orders (draft/pending plus received/completed) and reuses matching demo stock movements so stock is not deducted twice |
 | Theme integration | `public/css/app.css` CSS variables override Bootstrap defaults; same style on auth and app pages |
 | Stock audit trail | `inventory_transactions` table logs initial stock and quantity adjustments, shown on the product detail page |
 | Purchase orders | `PurchaseOrder` + `PurchaseOrderItem` with draft/received/cancelled statuses, multi-line items, edit/delete while draft, and **Receive stock** which writes one stock-in transaction per line through the observer so quantities and balances stay in sync |
@@ -108,6 +108,7 @@ database/migrations/*_create_inventory_transactions_table.php
 database/seeders/BrandSeeder.php
 database/seeders/CategorySeeder.php
 database/seeders/ProductSeeder.php
+database/seeders/OrderSeeder.php
 database/seeders/UserSeeder.php
 resources/views/layouts/app.blade.php
 resources/views/layouts/guest.blade.php
