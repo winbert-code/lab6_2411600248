@@ -137,6 +137,7 @@ This folder extends the Lab 5 project with the real-time inventory features.
 | Real-time dashboard | `GET /api/dashboard/stats`, `/api/products/low-stock`, `/api/transactions/recent` with API Resources; `public/js/dashboard.js` polls every 30 seconds and animates value changes |
 | Adjustments | `GET/POST /transactions/adjust` calculates the difference between system and physical count and writes an adjustment transaction |
 | Product history & reports | Running balance and date filter on the product page; `reports.index` with stock movement, low stock and valuation sections plus CSV export |
+| Malformed URL handling | Root `server.php` router plus a `NotFoundHttpException` handler: slash/dot combos such as `//////.......//////` and random elements appended to a link return to the current page instead of a 404 |
 | Tests | `tests/Feature/InventoryTrackingTest.php` — 10 inventory-specific tests (12 total with the skeleton tests) |
 
 ### Running Lab 6
