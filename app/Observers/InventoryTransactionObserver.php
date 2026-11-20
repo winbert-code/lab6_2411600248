@@ -99,9 +99,9 @@ class InventoryTransactionObserver
     }
 
     /**
-     * Notify admins/managers only when a product *crosses* the reorder line,
-     * and at most once per product per hour. This avoids alert spam while a
-     * product is already in a low-stock state.
+     * Notify admins, managers and staff when a product *crosses* the reorder
+     * line, and at most once per product per hour. This avoids alert spam
+     * while a product is already in a low-stock state.
      */
     private function sendLowStockNotification(
         Product $product,
@@ -124,7 +124,7 @@ class InventoryTransactionObserver
         }
 
         $recipients = User::query()
-            ->whereIn('role', ['admin', 'manager'])
+            ->whereIn('role', ['admin', 'manager', 'staff'])
             ->get();
 
         if ($recipients->isEmpty()) {

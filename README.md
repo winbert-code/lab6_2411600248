@@ -66,14 +66,14 @@ Laravel MVC implementation of Laboratory Exercise 5, using the suggested theme
 | Blade views | `layouts/app`, `layouts/guest`, dashboard, inventory, product index/create/edit/show, purchase/sales order index/form/show, category/brand/user CRUD views, activity log, reusable `components/stock-badge`, shared form partials |
 | Routes | `routes/web.php`: guest auth routes + auth-protected dashboard, inventory, resource routes for products, categories, brands and users, plus purchase/sales orders, activity log, transactions, reports and notifications |
 | Dashboard with real data | `DashboardController` computes product count, low/out-of-stock counts, total inventory value, recent products, category totals, and chart data |
-| Seeder | `ProductSeeder` inserts 20 realistic computer parts across 10 categories, including low-stock and out-of-stock examples; `UserSeeder` adds a demo staff account; `OrderSeeder` adds 3 demo purchase orders and 5 demo sales orders (draft/pending plus received/completed) and reuses matching demo stock movements so stock is not deducted twice |
+| Seeder | `ProductSeeder` inserts 20 realistic computer parts across 10 categories, including low-stock and out-of-stock examples; `UserSeeder` adds a demo staff account; `StaffNotificationSeeder` puts one example low-stock alert in that account's bell; `OrderSeeder` adds 3 demo purchase orders and 5 demo sales orders (draft/pending plus received/completed) and reuses matching demo stock movements so stock is not deducted twice |
 | Theme integration | `public/css/app.css` CSS variables override Bootstrap defaults; same style on auth and app pages |
 | Stock audit trail | `inventory_transactions` table logs initial stock and quantity adjustments, shown on the product detail page |
 | Purchase orders | `PurchaseOrder` + `PurchaseOrderItem` with draft/received/cancelled statuses, multi-line items, edit/delete while draft, and **Receive stock** which writes one stock-in transaction per line through the observer so quantities and balances stay in sync |
 | Sales orders | `SalesOrder` + `SalesOrderItem` with pending/completed/cancelled statuses, stock-aware item form, aggregated stock validation before fulfilment, and **Complete order** which writes stock-out transactions through the same observer; insufficient stock is rejected with an error |
 | Activity log (audit log) | `ActivityLog` model and `activity-logs.index` page (ported from Lab 5) record sign-ins, registrations and every create/update/deactivate/restore action across products, categories, brands and users, with search and module/action/user filters and a recent-activity panel on the dashboard |
 | Inactive products | The delete action sets `status` to `inactive` instead of removing rows; products and inventory history stay in the database and can be restored |
-| Testing | 22 automated tests (12 inventory-tracking + 4 order-management + 6 role-access) plus browser verification of login, dashboard statistics, inventory overview, product/category/brand CRUD, inactive brand/category restore, user roles, inactive-user login rejection, transaction logging, reports, order receive/complete flows and deactivate/restore |
+| Testing | 23 automated tests (12 inventory-tracking + 4 order-management + 6 role-access + 1 staff notification) plus browser verification of login, dashboard statistics, inventory overview, product/category/brand CRUD, inactive brand/category restore, user roles, inactive-user login rejection, transaction logging, reports, order receive/complete flows and deactivate/restore |
 
 ## Important files
 
@@ -146,7 +146,7 @@ This folder extends the Lab 5 project with the real-time inventory features.
 | Stock integrity | `DB::transaction()` plus `lockForUpdate()`; `InsufficientStockException` when a stock-out would exceed available stock; validation `after` hook in `StoreInventoryTransactionRequest` |
 | Controller & views | `InventoryTransactionController` (index/create/store/show/destroy/adjust) with filtering, pagination, eager loading, admin-only delete and Blade views under `resources/views/transactions/` |
 | Product model helpers | `latestTransaction()`, `isLowStock()`, `isOutOfStock()`, `stock status/color` accessors, `lowStock()`, `outOfStock()` and `inCategory()` scopes |
-| Low stock notifications | Queued `LowStockNotification` (database + mail), `notifications` table, role-based recipients (admin/manager) and hour-long dedupe; bell dropdown with unread count and mark-as-read |
+| Low stock notifications | Queued `LowStockNotification` (database + mail), `notifications` table, role-based recipients (admin/manager/staff) and hour-long dedupe; bell dropdown with unread count, mark-as-read and a seeded staff example |
 | Roles | `role` column on `users` with `admin`, `manage-users`, `manage-inventory`, `create-orders`, `fulfil-orders` and `export-reports` Gates; admin manages accounts, admin/manager manage stock and fulfil orders, staff can draft orders, and plain users are read-only |
 | Real-time dashboard | `GET /api/dashboard/stats`, `/api/products/low-stock`, `/api/transactions/recent` with API Resources; `public/js/dashboard.js` polls every 30 seconds and animates value changes |
 | Adjustments | `GET/POST /transactions/adjust` calculates the difference between system and physical count and writes an adjustment transaction |
@@ -162,6 +162,9 @@ C:\xampp2\php\php.exe artisan migrate --force
 
 # Optional repeatable demo transactions + one queued alert
 C:\xampp2\php\php.exe artisan db:seed --class=InventoryTransactionSeeder --force
+
+# Add the example low-stock alert to the demo staff bell
+C:\xampp2\php\php.exe artisan db:seed --class=StaffNotificationSeeder --force
 
 # Process queued notifications (needed for the bell to populate)
 C:\xampp2\php\php.exe artisan queue:work --stop-when-empty
