@@ -64,12 +64,14 @@
                             <i class="bi bi-patch-check"></i> Brands
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}"
-                           href="{{ route('users.index') }}">
-                            <i class="bi bi-people"></i> Users
-                        </a>
-                    </li>
+                    @can('manage-users')
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}"
+                               href="{{ route('users.index') }}">
+                                <i class="bi bi-people"></i> Users
+                            </a>
+                        </li>
+                    @endcan
                     <li class="nav-item">
                         <a class="nav-link {{ request()->routeIs('activity-logs.*') ? 'active' : '' }}"
                            href="{{ route('activity-logs.index') }}">
@@ -132,9 +134,7 @@
                         <a class="nav-link dropdown-toggle" href="#" id="userMenu" role="button"
                            data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="bi bi-person-circle"></i> {{ auth()->user()->name }}
-                            @if (auth()->user()->isInventoryManager())
-                                <span class="badge bg-light text-dark ms-1">{{ ucfirst(auth()->user()->role) }}</span>
-                            @endif
+                            <span class="badge bg-light text-dark ms-1">{{ ucfirst(auth()->user()->role) }}</span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
                             <li><span class="dropdown-item-text small text-muted">{{ auth()->user()->email }}</span></li>

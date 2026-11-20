@@ -12,27 +12,33 @@
             <a href="{{ route('sales-orders.index') }}" class="btn btn-outline-secondary">
                 <i class="bi bi-arrow-left"></i> Back to list
             </a>
-            @if ($order->isPending())
-                <a href="{{ route('sales-orders.edit', $order) }}" class="btn btn-outline-primary">
-                    <i class="bi bi-pencil"></i> Edit
-                </a>
-                <form method="POST" action="{{ route('sales-orders.complete', $order) }}"
-                      onsubmit="return confirm('Complete this order? Stock levels will decrease immediately.')">
-                    @csrf
-                    <button class="btn btn-success" type="submit"><i class="bi bi-box-arrow-out-down"></i> Complete order</button>
-                </form>
-                <form method="POST" action="{{ route('sales-orders.cancel', $order) }}"
-                      onsubmit="return confirm('Cancel this sales order?')">
-                    @csrf
-                    <button class="btn btn-outline-warning" type="submit">Cancel order</button>
-                </form>
-                <form method="POST" action="{{ route('sales-orders.destroy', $order) }}"
-                      onsubmit="return confirm('Delete this pending order permanently?')">
-                    @csrf
-                    @method('DELETE')
-                    <button class="btn btn-outline-danger" type="submit"><i class="bi bi-trash"></i></button>
-                </form>
-            @endif
+            @can('create-orders')
+                @if ($order->isPending())
+                    <a href="{{ route('sales-orders.edit', $order) }}" class="btn btn-outline-primary">
+                        <i class="bi bi-pencil"></i> Edit
+                    </a>
+                @endif
+            @endcan
+            @can('fulfil-orders')
+                @if ($order->isPending())
+                    <form method="POST" action="{{ route('sales-orders.complete', $order) }}"
+                          onsubmit="return confirm('Complete this order? Stock levels will decrease immediately.')">
+                        @csrf
+                        <button class="btn btn-success" type="submit"><i class="bi bi-box-arrow-out-down"></i> Complete order</button>
+                    </form>
+                    <form method="POST" action="{{ route('sales-orders.cancel', $order) }}"
+                          onsubmit="return confirm('Cancel this sales order?')">
+                        @csrf
+                        <button class="btn btn-outline-warning" type="submit">Cancel order</button>
+                    </form>
+                    <form method="POST" action="{{ route('sales-orders.destroy', $order) }}"
+                          onsubmit="return confirm('Delete this pending order permanently?')">
+                        @csrf
+                        @method('DELETE')
+                        <button class="btn btn-outline-danger" type="submit"><i class="bi bi-trash"></i></button>
+                    </form>
+                @endif
+            @endcan
         </div>
     </div>
 

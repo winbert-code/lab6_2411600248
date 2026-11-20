@@ -8,6 +8,15 @@
          data-low-stock-url="{{ route('api.products.low-stock') }}"
          data-recent-url="{{ route('api.transactions.recent') }}"
          data-poll-interval="30000">
+        @if (auth()->user()->isStaff())
+            <div class="alert alert-info alert-dismissible fade show" role="alert">
+                <i class="bi bi-shield-check"></i>
+                <strong>Staff view:</strong> you can review records and prepare purchase or sales orders.
+                Receiving stock, completing orders, editing the catalog and managing users are restricted to managers and admins.
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
+
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
             <div>
                 <h1 class="h3 fw-bold mb-1">Dashboard</h1>
@@ -21,10 +30,15 @@
                     <a href="{{ route('transactions.create') }}" class="btn btn-outline-primary">
                         <i class="bi bi-arrow-left-right"></i> Record movement
                     </a>
+                    <a href="{{ route('products.create') }}" class="btn btn-primary">
+                        <i class="bi bi-plus-lg"></i> Add Product
+                    </a>
                 @endcan
-                <a href="{{ route('products.create') }}" class="btn btn-primary">
-                    <i class="bi bi-plus-lg"></i> Add Product
-                </a>
+                @can('create-orders')
+                    <a href="{{ route('sales-orders.create') }}" class="btn btn-primary">
+                        <i class="bi bi-cart-plus"></i> New Sales Order
+                    </a>
+                @endcan
             </div>
         </div>
 

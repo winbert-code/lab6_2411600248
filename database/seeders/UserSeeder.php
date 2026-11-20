@@ -22,5 +22,15 @@ class UserSeeder extends Seeder
                 'password' => Hash::make('winbert906'),
             ],
         );
+
+        User::updateOrCreate(
+            ['email' => 'staff@bytestock.test'],
+            [
+                'name' => 'Staff User',
+                'role' => User::ROLE_STAFF,
+                'status' => User::STATUS_ACTIVE,
+                'password' => Hash::make('staff123'),
+            ],
+        );
     }
 }

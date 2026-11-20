@@ -33,14 +33,51 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    // Lab 5 modules: inventory overview, brands, categories and user accounts.
+    /*
+     * Role limits:
+     *  - admin   : everything, including user accounts and report exports
+     *  - manager : catalog, stock, transactions and order fulfilment
+     *  - staff   : view everything and draft/edit orders, but no stock changes
+     *  - user    : read-only view of inventory and reports
+     */
+
+    // Admin only: user accounts and roles.
+    Route::middleware('can:manage-users')->group(function () {
+        Route::patch('users/{user}/restore', [UserController::class, 'restore'])->name('users.restore');
+        Route::resource('users', UserController::class)->except(['show']);
+    });
+
+    // Admin + manager: catalog and stock movements.
+    Route::middleware('can:manage-inventory')->group(function () {
+        Route::patch('categories/{category}/restore', [CategoryController::class, 'restore'])->name('categories.restore');
+        Route::resource('categories', CategoryController::class)->except(['index', 'show']);
+
+        Route::patch('brands/{brand}/restore', [BrandController::class, 'restore'])->name('brands.restore');
+        Route::resource('brands', BrandController::class)->except(['index', 'show']);
+
+        Route::patch('products/{product}/restore', [ProductController::class, 'restore'])->name('products.restore');
+        Route::resource('products', ProductController::class)->except(['index', 'show']);
+
+        Route::get('transactions/adjust', [InventoryTransactionController::class, 'createAdjustment'])
+            ->name('transactions.adjust');
+        Route::post('transactions/adjust', [InventoryTransactionController::class, 'storeAdjustment'])
+            ->name('transactions.adjust.store');
+        Route::get('transactions/create', [InventoryTransactionController::class, 'create'])
+            ->name('transactions.create');
+        Route::post('transactions', [InventoryTransactionController::class, 'store'])
+            ->name('transactions.store');
+        Route::delete('transactions/{transaction}', [InventoryTransactionController::class, 'destroy'])
+            ->middleware('can:admin')
+            ->name('transactions.destroy');
+    });
+
+    // Read-only catalog and stock pages for every signed-in user.
     Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
-    Route::patch('categories/{category}/restore', [CategoryController::class, 'restore'])->name('categories.restore');
-    Route::resource('categories', CategoryController::class)->except(['show']);
-    Route::patch('brands/{brand}/restore', [BrandController::class, 'restore'])->name('brands.restore');
-    Route::resource('brands', BrandController::class)->except(['show']);
-    Route::patch('users/{user}/restore', [UserController::class, 'restore'])->name('users.restore');
-    Route::resource('users', UserController::class)->except(['show']);
+    Route::resource('categories', CategoryController::class)->only(['index']);
+    Route::resource('brands', BrandController::class)->only(['index']);
+    Route::resource('products', ProductController::class)->only(['index', 'show']);
+    Route::get('transactions', [InventoryTransactionController::class, 'index'])->name('transactions.index');
+    Route::get('transactions/{transaction}', [InventoryTransactionController::class, 'show'])->name('transactions.show');
 
     // Lab 5 activity log (audit trail) for sign-ins and inventory changes.
     Route::get('/activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
@@ -48,80 +85,40 @@ Route::middleware('auth')->group(function () {
     Route::patch('notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
     Route::patch('notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
 
-    Route::patch('products/{product}/restore', [ProductController::class, 'restore'])->name('products.restore');
-    Route::resource('products', ProductController::class);
-
-    Route::get('transactions/adjust', [InventoryTransactionController::class, 'createAdjustment'])
-        ->middleware('can:manage-inventory')
-        ->name('transactions.adjust');
-    Route::post('transactions/adjust', [InventoryTransactionController::class, 'storeAdjustment'])
-        ->middleware('can:manage-inventory')
-        ->name('transactions.adjust.store');
-
     Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
-    Route::get('reports/export', [ReportController::class, 'export'])->name('reports.export');
+    Route::get('reports/export', [ReportController::class, 'export'])
+        ->middleware('can:export-reports')
+        ->name('reports.export');
 
-    // Purchase and sales orders. Only inventory managers can write orders;
-    // everyone signed in can view them.
+    // Purchase orders: staff may draft, admin/manager may receive and cancel.
     Route::get('purchase-orders', [PurchaseOrderController::class, 'index'])->name('purchase-orders.index');
-    Route::get('purchase-orders/create', [PurchaseOrderController::class, 'create'])
-        ->middleware('can:manage-inventory')
-        ->name('purchase-orders.create');
-    Route::post('purchase-orders', [PurchaseOrderController::class, 'store'])
-        ->middleware('can:manage-inventory')
-        ->name('purchase-orders.store');
-    Route::get('purchase-orders/{purchaseOrder}/edit', [PurchaseOrderController::class, 'edit'])
-        ->middleware('can:manage-inventory')
-        ->name('purchase-orders.edit');
-    Route::patch('purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'update'])
-        ->middleware('can:manage-inventory')
-        ->name('purchase-orders.update');
-    Route::delete('purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'destroy'])
-        ->middleware('can:manage-inventory')
-        ->name('purchase-orders.destroy');
-    Route::post('purchase-orders/{purchaseOrder}/receive', [PurchaseOrderController::class, 'receive'])
-        ->middleware('can:manage-inventory')
-        ->name('purchase-orders.receive');
-    Route::post('purchase-orders/{purchaseOrder}/cancel', [PurchaseOrderController::class, 'cancel'])
-        ->middleware('can:manage-inventory')
-        ->name('purchase-orders.cancel');
+    Route::middleware('can:create-orders')->group(function () {
+        Route::get('purchase-orders/create', [PurchaseOrderController::class, 'create'])->name('purchase-orders.create');
+        Route::post('purchase-orders', [PurchaseOrderController::class, 'store'])->name('purchase-orders.store');
+        Route::get('purchase-orders/{purchaseOrder}/edit', [PurchaseOrderController::class, 'edit'])->name('purchase-orders.edit');
+        Route::patch('purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'update'])->name('purchase-orders.update');
+    });
     Route::get('purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'show'])->name('purchase-orders.show');
+    Route::middleware('can:fulfil-orders')->group(function () {
+        Route::delete('purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'destroy'])->name('purchase-orders.destroy');
+        Route::post('purchase-orders/{purchaseOrder}/receive', [PurchaseOrderController::class, 'receive'])->name('purchase-orders.receive');
+        Route::post('purchase-orders/{purchaseOrder}/cancel', [PurchaseOrderController::class, 'cancel'])->name('purchase-orders.cancel');
+    });
 
+    // Sales orders: staff may draft, admin/manager may complete and cancel.
     Route::get('sales-orders', [SalesOrderController::class, 'index'])->name('sales-orders.index');
-    Route::get('sales-orders/create', [SalesOrderController::class, 'create'])
-        ->middleware('can:manage-inventory')
-        ->name('sales-orders.create');
-    Route::post('sales-orders', [SalesOrderController::class, 'store'])
-        ->middleware('can:manage-inventory')
-        ->name('sales-orders.store');
-    Route::get('sales-orders/{salesOrder}/edit', [SalesOrderController::class, 'edit'])
-        ->middleware('can:manage-inventory')
-        ->name('sales-orders.edit');
-    Route::patch('sales-orders/{salesOrder}', [SalesOrderController::class, 'update'])
-        ->middleware('can:manage-inventory')
-        ->name('sales-orders.update');
-    Route::delete('sales-orders/{salesOrder}', [SalesOrderController::class, 'destroy'])
-        ->middleware('can:manage-inventory')
-        ->name('sales-orders.destroy');
-    Route::post('sales-orders/{salesOrder}/complete', [SalesOrderController::class, 'complete'])
-        ->middleware('can:manage-inventory')
-        ->name('sales-orders.complete');
-    Route::post('sales-orders/{salesOrder}/cancel', [SalesOrderController::class, 'cancel'])
-        ->middleware('can:manage-inventory')
-        ->name('sales-orders.cancel');
+    Route::middleware('can:create-orders')->group(function () {
+        Route::get('sales-orders/create', [SalesOrderController::class, 'create'])->name('sales-orders.create');
+        Route::post('sales-orders', [SalesOrderController::class, 'store'])->name('sales-orders.store');
+        Route::get('sales-orders/{salesOrder}/edit', [SalesOrderController::class, 'edit'])->name('sales-orders.edit');
+        Route::patch('sales-orders/{salesOrder}', [SalesOrderController::class, 'update'])->name('sales-orders.update');
+    });
     Route::get('sales-orders/{salesOrder}', [SalesOrderController::class, 'show'])->name('sales-orders.show');
-
-    Route::get('transactions', [InventoryTransactionController::class, 'index'])->name('transactions.index');
-    Route::get('transactions/create', [InventoryTransactionController::class, 'create'])
-        ->middleware('can:manage-inventory')
-        ->name('transactions.create');
-    Route::post('transactions', [InventoryTransactionController::class, 'store'])
-        ->middleware('can:manage-inventory')
-        ->name('transactions.store');
-    Route::get('transactions/{transaction}', [InventoryTransactionController::class, 'show'])->name('transactions.show');
-    Route::delete('transactions/{transaction}', [InventoryTransactionController::class, 'destroy'])
-        ->middleware('can:admin')
-        ->name('transactions.destroy');
+    Route::middleware('can:fulfil-orders')->group(function () {
+        Route::delete('sales-orders/{salesOrder}', [SalesOrderController::class, 'destroy'])->name('sales-orders.destroy');
+        Route::post('sales-orders/{salesOrder}/complete', [SalesOrderController::class, 'complete'])->name('sales-orders.complete');
+        Route::post('sales-orders/{salesOrder}/cancel', [SalesOrderController::class, 'cancel'])->name('sales-orders.cancel');
+    });
 });
 
 /*
@@ -145,7 +142,7 @@ Route::fallback(function () {
 
     $path = parse_url($previous, PHP_URL_PATH) ?: '';
 
-    if (preg_match('#/{2,}|\.{2,}#', $path)) {
+    if (preg_match('#/{2,}|\\.{2,}#', $path)) {
         return redirect()->to($safeTarget);
     }
 

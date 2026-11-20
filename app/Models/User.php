@@ -79,9 +79,28 @@ class User extends Authenticatable
         return $this->role === self::ROLE_STAFF;
     }
 
+    /**
+     * Admins and managers may change the catalog and stock levels. Staff can
+     * prepare orders, but cannot alter stock directly or manage accounts.
+     */
     public function isInventoryManager(): bool
     {
+        return $this->isAdmin() || $this->isManager();
+    }
+
+    public function canCreateOrders(): bool
+    {
         return $this->isAdmin() || $this->isManager() || $this->isStaff();
+    }
+
+    public function canFulfilOrders(): bool
+    {
+        return $this->isAdmin() || $this->isManager();
+    }
+
+    public function canManageUsers(): bool
+    {
+        return $this->isAdmin();
     }
 
     public function deactivate(): bool

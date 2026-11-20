@@ -57,29 +57,31 @@
                         </li>
                     </ul>
                 </div>
-                <div class="card-footer bg-transparent border-0 px-4 pb-4 d-flex gap-2">
-                    <a href="{{ route('products.edit', $product) }}" class="btn btn-primary">
-                        <i class="bi bi-pencil"></i> Edit
-                    </a>
-                    @if ($product->isActive())
-                        <form method="POST" action="{{ route('products.destroy', $product) }}"
-                              onsubmit="return confirm('Mark {{ addslashes($product->name) }} as inactive? The product and its inventory records will be kept.');">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn btn-outline-danger">
-                                <i class="bi bi-x-circle"></i> Mark inactive
-                            </button>
-                        </form>
-                    @else
-                        <form method="POST" action="{{ route('products.restore', $product) }}">
-                            @csrf
-                            @method('PATCH')
-                            <button type="submit" class="btn btn-outline-success">
-                                <i class="bi bi-arrow-counterclockwise"></i> Restore
-                            </button>
-                        </form>
-                    @endif
-                </div>
+                @can('manage-inventory')
+                    <div class="card-footer bg-transparent border-0 px-4 pb-4 d-flex gap-2">
+                        <a href="{{ route('products.edit', $product) }}" class="btn btn-primary">
+                            <i class="bi bi-pencil"></i> Edit
+                        </a>
+                        @if ($product->isActive())
+                            <form method="POST" action="{{ route('products.destroy', $product) }}"
+                                  onsubmit="return confirm('Mark {{ addslashes($product->name) }} as inactive? The product and its inventory records will be kept.');">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-outline-danger">
+                                    <i class="bi bi-x-circle"></i> Mark inactive
+                                </button>
+                            </form>
+                        @else
+                            <form method="POST" action="{{ route('products.restore', $product) }}">
+                                @csrf
+                                @method('PATCH')
+                                <button type="submit" class="btn btn-outline-success">
+                                    <i class="bi bi-arrow-counterclockwise"></i> Restore
+                                </button>
+                            </form>
+                        @endif
+                    </div>
+                @endcan
             </div>
         </div>
 

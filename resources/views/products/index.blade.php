@@ -8,9 +8,11 @@
             <h1 class="h3 fw-bold mb-1">Inventory</h1>
             <p class="text-muted mb-0">Manage computer parts, stock levels, and supplier details.</p>
         </div>
-        <a href="{{ route('products.create') }}" class="btn btn-primary">
-            <i class="bi bi-plus-lg"></i> Add Product
-        </a>
+        @can('manage-inventory')
+            <a href="{{ route('products.create') }}" class="btn btn-primary">
+                <i class="bi bi-plus-lg"></i> Add Product
+            </a>
+        @endcan
     </div>
 
     <div class="card app-card mb-4">
@@ -103,37 +105,42 @@
                                        title="View" aria-label="View product">
                                         <i class="bi bi-eye"></i>
                                     </a>
-                                    <a href="{{ route('products.edit', $product) }}" class="btn btn-outline-primary"
-                                       title="Edit" aria-label="Edit product">
-                                        <i class="bi bi-pencil"></i>
-                                    </a>
-                                    @if ($product->isActive())
-                                        <form method="POST" action="{{ route('products.destroy', $product) }}"
-                                              onsubmit="return confirm('Mark {{ addslashes($product->name) }} as inactive? The product and its inventory records will be kept.');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-outline-danger"
-                                                    title="Deactivate" aria-label="Deactivate product">
-                                                <i class="bi bi-x-circle"></i>
-                                            </button>
-                                        </form>
-                                    @else
-                                        <form method="POST" action="{{ route('products.restore', $product) }}">
-                                            @csrf
-                                            @method('PATCH')
-                                            <button type="submit" class="btn btn-outline-success"
-                                                    title="Restore" aria-label="Restore product">
-                                                <i class="bi bi-arrow-counterclockwise"></i>
-                                            </button>
-                                        </form>
-                                    @endif
+                                    @can('manage-inventory')
+                                        <a href="{{ route('products.edit', $product) }}" class="btn btn-outline-primary"
+                                           title="Edit" aria-label="Edit product">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        @if ($product->isActive())
+                                            <form method="POST" action="{{ route('products.destroy', $product) }}"
+                                                  onsubmit="return confirm('Mark {{ addslashes($product->name) }} as inactive? The product and its inventory records will be kept.');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-outline-danger"
+                                                        title="Deactivate" aria-label="Deactivate product">
+                                                    <i class="bi bi-x-circle"></i>
+                                                </button>
+                                            </form>
+                                        @else
+                                            <form method="POST" action="{{ route('products.restore', $product) }}">
+                                                @csrf
+                                                @method('PATCH')
+                                                <button type="submit" class="btn btn-outline-success"
+                                                        title="Restore" aria-label="Restore product">
+                                                    <i class="bi bi-arrow-counterclockwise"></i>
+                                                </button>
+                                            </form>
+                                        @endif
+                                    @endcan
                                 </div>
                             </td>
                         </tr>
                     @empty
                         <tr>
                             <td colspan="8" class="text-center text-muted py-4">
-                                No products found. <a href="{{ route('products.create') }}">Add the first one</a>.
+                                No products found.
+                                @can('manage-inventory')
+                                    <a href="{{ route('products.create') }}">Add the first one</a>.
+                                @endcan
                             </td>
                         </tr>
                     @endforelse

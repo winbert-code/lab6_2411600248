@@ -12,27 +12,33 @@
             <a href="{{ route('purchase-orders.index') }}" class="btn btn-outline-secondary">
                 <i class="bi bi-arrow-left"></i> Back to list
             </a>
-            @if ($order->isDraft())
-                <a href="{{ route('purchase-orders.edit', $order) }}" class="btn btn-outline-primary">
-                    <i class="bi bi-pencil"></i> Edit
-                </a>
-                <form method="POST" action="{{ route('purchase-orders.receive', $order) }}"
-                      onsubmit="return confirm('Receive this order? Stock levels will increase immediately.')">
-                    @csrf
-                    <button class="btn btn-success" type="submit"><i class="bi bi-box-arrow-in-down"></i> Receive stock</button>
-                </form>
-                <form method="POST" action="{{ route('purchase-orders.cancel', $order) }}"
-                      onsubmit="return confirm('Cancel this purchase order?')">
-                    @csrf
-                    <button class="btn btn-outline-warning" type="submit">Cancel order</button>
-                </form>
-                <form method="POST" action="{{ route('purchase-orders.destroy', $order) }}"
-                      onsubmit="return confirm('Delete this draft order permanently?')">
-                    @csrf
-                    @method('DELETE')
-                    <button class="btn btn-outline-danger" type="submit"><i class="bi bi-trash"></i></button>
-                </form>
-            @endif
+            @can('create-orders')
+                @if ($order->isDraft())
+                    <a href="{{ route('purchase-orders.edit', $order) }}" class="btn btn-outline-primary">
+                        <i class="bi bi-pencil"></i> Edit
+                    </a>
+                @endif
+            @endcan
+            @can('fulfil-orders')
+                @if ($order->isDraft())
+                    <form method="POST" action="{{ route('purchase-orders.receive', $order) }}"
+                          onsubmit="return confirm('Receive this order? Stock levels will increase immediately.')">
+                        @csrf
+                        <button class="btn btn-success" type="submit"><i class="bi bi-box-arrow-in-down"></i> Receive stock</button>
+                    </form>
+                    <form method="POST" action="{{ route('purchase-orders.cancel', $order) }}"
+                          onsubmit="return confirm('Cancel this purchase order?')">
+                        @csrf
+                        <button class="btn btn-outline-warning" type="submit">Cancel order</button>
+                    </form>
+                    <form method="POST" action="{{ route('purchase-orders.destroy', $order) }}"
+                          onsubmit="return confirm('Delete this draft order permanently?')">
+                        @csrf
+                        @method('DELETE')
+                        <button class="btn btn-outline-danger" type="submit"><i class="bi bi-trash"></i></button>
+                    </form>
+                @endif
+            @endcan
         </div>
     </div>
 

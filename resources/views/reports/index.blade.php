@@ -8,9 +8,11 @@
             <h1 class="h3 fw-bold mb-1">Inventory Reports</h1>
             <p class="text-muted mb-0">Stock movement, low stock and valuation summaries.</p>
         </div>
-        <a href="{{ route('reports.export', request()->only('from', 'to')) }}" class="btn btn-primary">
-            <i class="bi bi-download"></i> Export CSV
-        </a>
+        @can('export-reports')
+            <a href="{{ route('reports.export', request()->only('from', 'to')) }}" class="btn btn-primary">
+                <i class="bi bi-download"></i> Export CSV
+            </a>
+        @endcan
     </div>
 
     <div class="card app-card mb-4">

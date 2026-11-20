@@ -8,9 +8,11 @@
             <h1 class="h3 fw-bold mb-1">Users</h1>
             <p class="text-muted mb-0">Manage accounts and roles, and deactivate or restore access.</p>
         </div>
-        <a href="{{ route('users.create') }}" class="btn btn-primary">
-            <i class="bi bi-person-plus"></i> Add User
-        </a>
+        @can('manage-users')
+            <a href="{{ route('users.create') }}" class="btn btn-primary">
+                <i class="bi bi-person-plus"></i> Add User
+            </a>
+        @endcan
     </div>
 
     <div class="card app-card mb-4">
@@ -84,40 +86,45 @@
                             </td>
                             <td>{{ $member->created_at?->format('M d, Y') ?? '—' }}</td>
                             <td>
-                                <div class="btn-group btn-group-sm" role="group">
-                                    <a href="{{ route('users.edit', $member) }}" class="btn btn-outline-primary"
-                                       title="Edit" aria-label="Edit user">
-                                        <i class="bi bi-pencil"></i>
-                                    </a>
-                                    @if ($member->id !== auth()->id())
-                                        @if ($member->isActive())
-                                            <form method="POST" action="{{ route('users.destroy', $member) }}"
-                                                  onsubmit="return confirm('Deactivate {{ addslashes($member->name) }}? They will no longer be able to log in.');">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-outline-danger"
-                                                        title="Deactivate" aria-label="Deactivate user">
-                                                    <i class="bi bi-x-circle"></i>
-                                                </button>
-                                            </form>
-                                        @else
-                                            <form method="POST" action="{{ route('users.restore', $member) }}">
-                                                @csrf
-                                                @method('PATCH')
-                                                <button type="submit" class="btn btn-outline-success"
-                                                        title="Restore" aria-label="Restore user">
-                                                    <i class="bi bi-arrow-counterclockwise"></i>
-                                                </button>
-                                            </form>
+                                @can('manage-users')
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="{{ route('users.edit', $member) }}" class="btn btn-outline-primary"
+                                           title="Edit" aria-label="Edit user">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        @if ($member->id !== auth()->id())
+                                            @if ($member->isActive())
+                                                <form method="POST" action="{{ route('users.destroy', $member) }}"
+                                                      onsubmit="return confirm('Deactivate {{ addslashes($member->name) }}? They will no longer be able to log in.');">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-outline-danger"
+                                                            title="Deactivate" aria-label="Deactivate user">
+                                                        <i class="bi bi-x-circle"></i>
+                                                    </button>
+                                                </form>
+                                            @else
+                                                <form method="POST" action="{{ route('users.restore', $member) }}">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <button type="submit" class="btn btn-outline-success"
+                                                            title="Restore" aria-label="Restore user">
+                                                        <i class="bi bi-arrow-counterclockwise"></i>
+                                                    </button>
+                                                </form>
+                                            @endif
                                         @endif
-                                    @endif
-                                </div>
+                                    </div>
+                                @endcan
                             </td>
                         </tr>
                     @empty
                         <tr>
                             <td colspan="6" class="text-center text-muted py-4">
-                                No users found. <a href="{{ route('users.create') }}">Add the first one</a>.
+                                No users found.
+                                @can('manage-users')
+                                    <a href="{{ route('users.create') }}">Add the first one</a>.
+                                @endcan
                             </td>
                         </tr>
                     @endforelse

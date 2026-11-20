@@ -8,9 +8,11 @@
             <h1 class="h3 fw-bold mb-1">Sales Orders</h1>
             <p class="text-muted mb-0">Create orders, then complete them to deduct stock automatically.</p>
         </div>
-        <a href="{{ route('sales-orders.create') }}" class="btn btn-primary">
-            <i class="bi bi-plus-lg"></i> New sales order
-        </a>
+        @can('create-orders')
+            <a href="{{ route('sales-orders.create') }}" class="btn btn-primary">
+                <i class="bi bi-plus-lg"></i> New sales order
+            </a>
+        @endcan
     </div>
 
     <div class="card app-card mb-4">
@@ -80,11 +82,13 @@
                                 <a href="{{ route('sales-orders.show', $order) }}" class="btn btn-sm btn-outline-primary">
                                     <i class="bi bi-eye"></i>
                                 </a>
-                                @if ($order->isPending())
-                                    <a href="{{ route('sales-orders.edit', $order) }}" class="btn btn-sm btn-outline-secondary">
-                                        <i class="bi bi-pencil"></i>
-                                    </a>
-                                @endif
+                                @can('create-orders')
+                                    @if ($order->isPending())
+                                        <a href="{{ route('sales-orders.edit', $order) }}" class="btn btn-sm btn-outline-secondary">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                    @endif
+                                @endcan
                             </td>
                         </tr>
                     @empty

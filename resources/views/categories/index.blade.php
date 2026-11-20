@@ -8,9 +8,11 @@
             <h1 class="h3 fw-bold mb-1">Categories</h1>
             <p class="text-muted mb-0">Group your computer parts into product categories.</p>
         </div>
-        <a href="{{ route('categories.create') }}" class="btn btn-primary">
-            <i class="bi bi-plus-lg"></i> Add Category
-        </a>
+        @can('manage-inventory')
+            <a href="{{ route('categories.create') }}" class="btn btn-primary">
+                <i class="bi bi-plus-lg"></i> Add Category
+            </a>
+        @endcan
     </div>
 
     <div class="card app-card mb-4">
@@ -60,33 +62,38 @@
                             <td>{{ $category->description ?? '—' }}</td>
                             <td>
                                 <div class="btn-group btn-group-sm" role="group">
-                                    <a href="{{ route('categories.edit', $category) }}" class="btn btn-outline-primary"
-                                       title="Edit" aria-label="Edit category"><i class="bi bi-pencil"></i></a>
-                                    @if ($category->isActive())
-                                        <form method="POST" action="{{ route('categories.destroy', $category) }}"
-                                              onsubmit="return confirm('Remove {{ addslashes($category->name) }}? It will be marked inactive and can be restored anytime.');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-outline-danger"
-                                                    title="Remove" aria-label="Remove category"><i class="bi bi-trash"></i></button>
-                                        </form>
-                                    @else
-                                        <form method="POST" action="{{ route('categories.restore', $category) }}">
-                                            @csrf
-                                            @method('PATCH')
-                                            <button type="submit" class="btn btn-outline-success"
-                                                    title="Restore" aria-label="Restore category">
-                                                <i class="bi bi-arrow-counterclockwise"></i>
-                                            </button>
-                                        </form>
-                                    @endif
+                                    @can('manage-inventory')
+                                        <a href="{{ route('categories.edit', $category) }}" class="btn btn-outline-primary"
+                                           title="Edit" aria-label="Edit category"><i class="bi bi-pencil"></i></a>
+                                        @if ($category->isActive())
+                                            <form method="POST" action="{{ route('categories.destroy', $category) }}"
+                                                  onsubmit="return confirm('Remove {{ addslashes($category->name) }}? It will be marked inactive and can be restored anytime.');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-outline-danger"
+                                                        title="Remove" aria-label="Remove category"><i class="bi bi-trash"></i></button>
+                                            </form>
+                                        @else
+                                            <form method="POST" action="{{ route('categories.restore', $category) }}">
+                                                @csrf
+                                                @method('PATCH')
+                                                <button type="submit" class="btn btn-outline-success"
+                                                        title="Restore" aria-label="Restore category">
+                                                    <i class="bi bi-arrow-counterclockwise"></i>
+                                                </button>
+                                            </form>
+                                        @endif
+                                    @endcan
                                 </div>
                             </td>
                         </tr>
                     @empty
                         <tr>
                             <td colspan="6" class="text-center text-muted py-4">
-                                No categories found. <a href="{{ route('categories.create') }}">Add the first one</a>.
+                                No categories found.
+                                @can('manage-inventory')
+                                    <a href="{{ route('categories.create') }}">Add the first one</a>.
+                                @endcan
                             </td>
                         </tr>
                     @endforelse

@@ -49,6 +49,7 @@ Laravel MVC implementation of Laboratory Exercise 5, using the suggested theme
    | Email | Password |
    | --- | --- |
    | `winbert@gmail.com` | `winbert906` |
+| `staff@bytestock.test` | `staff123` |
 
 ## Features mapped to the lab exercise
 
@@ -56,23 +57,23 @@ Laravel MVC implementation of Laboratory Exercise 5, using the suggested theme
 | --- | --- |
 | Environment & DB config | Laravel 13 project, MySQL `.env`, migrations |
 | Authentication | Laravel `Auth` facade with custom login/register Blade views, hashed passwords, `remember me`, throttle on POST routes, guest/auth middleware |
-| Users & roles | `UserController` and `users/*` views: add users as admin, manager, staff or user, edit roles and passwords, deactivate/restore accounts, and filter by role/status; inactive users cannot log in and you cannot deactivate yourself |
+| Users & roles | Admin-only `UserController` and `users/*` views: add users as admin, manager, staff or user, edit roles and passwords, deactivate/restore accounts, and filter by role/status; inactive users cannot log in and you cannot deactivate yourself |
 | Models & migrations | `User`, `Brand`, `Category`, `Product`, `InventoryTransaction`, `PurchaseOrder`, `PurchaseOrderItem`, `SalesOrder`, `SalesOrderItem`. Products belong to a brand and a category via foreign keys; unique SKU, casts, `active`/`inactive` status scopes, `lowStock`/`outOfStock` scopes, `stockStatus()` |
 | Brands & categories | First-class `brands` and `categories` tables with their own pages under **Brands** and **Categories**; removing an item marks it inactive (never deletes it), and the restore button makes it available for stock again; inactive items are hidden from new-product dropdowns but kept for products already using them |
 | CRUD controller | `app\Http\Controllers\ProductController.php` (resource controller with implicit route binding) |
 | Validation | `StoreProductRequest` / `UpdateProductRequest` with custom messages, SKU uniqueness on create/update, normalized uppercase SKU, active brand/category validation |
-| Navigation | Dashboard, Inventory (stock overview), Products (CRUD + deactivate/restore), Purchase Orders, Sales Orders, Categories (CRUD + deactivate/restore), Brands (CRUD + deactivate/restore), Users (roles + status), Activity Log, Transactions, Reports |
+| Navigation | Dashboard, Inventory (stock overview), Products (CRUD + deactivate/restore), Purchase Orders, Sales Orders, Categories (CRUD + deactivate/restore), Brands (CRUD + deactivate/restore), Users (admin only), Activity Log, Transactions, Reports |
 | Blade views | `layouts/app`, `layouts/guest`, dashboard, inventory, product index/create/edit/show, purchase/sales order index/form/show, category/brand/user CRUD views, activity log, reusable `components/stock-badge`, shared form partials |
 | Routes | `routes/web.php`: guest auth routes + auth-protected dashboard, inventory, resource routes for products, categories, brands and users, plus purchase/sales orders, activity log, transactions, reports and notifications |
 | Dashboard with real data | `DashboardController` computes product count, low/out-of-stock counts, total inventory value, recent products, category totals, and chart data |
-| Seeder | `ProductSeeder` inserts 20 realistic computer parts across 10 categories, including low-stock and out-of-stock examples; `OrderSeeder` adds 3 demo purchase orders and 5 demo sales orders (draft/pending plus received/completed) and reuses matching demo stock movements so stock is not deducted twice |
+| Seeder | `ProductSeeder` inserts 20 realistic computer parts across 10 categories, including low-stock and out-of-stock examples; `UserSeeder` adds a demo staff account; `OrderSeeder` adds 3 demo purchase orders and 5 demo sales orders (draft/pending plus received/completed) and reuses matching demo stock movements so stock is not deducted twice |
 | Theme integration | `public/css/app.css` CSS variables override Bootstrap defaults; same style on auth and app pages |
 | Stock audit trail | `inventory_transactions` table logs initial stock and quantity adjustments, shown on the product detail page |
 | Purchase orders | `PurchaseOrder` + `PurchaseOrderItem` with draft/received/cancelled statuses, multi-line items, edit/delete while draft, and **Receive stock** which writes one stock-in transaction per line through the observer so quantities and balances stay in sync |
 | Sales orders | `SalesOrder` + `SalesOrderItem` with pending/completed/cancelled statuses, stock-aware item form, aggregated stock validation before fulfilment, and **Complete order** which writes stock-out transactions through the same observer; insufficient stock is rejected with an error |
 | Activity log (audit log) | `ActivityLog` model and `activity-logs.index` page (ported from Lab 5) record sign-ins, registrations and every create/update/deactivate/restore action across products, categories, brands and users, with search and module/action/user filters and a recent-activity panel on the dashboard |
 | Inactive products | The delete action sets `status` to `inactive` instead of removing rows; products and inventory history stay in the database and can be restored |
-| Testing | 16 automated tests (12 inventory-tracking + 4 order-management) plus browser verification of login, dashboard statistics, inventory overview, product/category/brand CRUD, inactive brand/category restore, user roles, inactive-user login rejection, transaction logging, reports, order receive/complete flows and deactivate/restore |
+| Testing | 22 automated tests (12 inventory-tracking + 4 order-management + 6 role-access) plus browser verification of login, dashboard statistics, inventory overview, product/category/brand CRUD, inactive brand/category restore, user roles, inactive-user login rejection, transaction logging, reports, order receive/complete flows and deactivate/restore |
 
 ## Important files
 
@@ -146,7 +147,7 @@ This folder extends the Lab 5 project with the real-time inventory features.
 | Controller & views | `InventoryTransactionController` (index/create/store/show/destroy/adjust) with filtering, pagination, eager loading, admin-only delete and Blade views under `resources/views/transactions/` |
 | Product model helpers | `latestTransaction()`, `isLowStock()`, `isOutOfStock()`, `stock status/color` accessors, `lowStock()`, `outOfStock()` and `inCategory()` scopes |
 | Low stock notifications | Queued `LowStockNotification` (database + mail), `notifications` table, role-based recipients (admin/manager) and hour-long dedupe; bell dropdown with unread count and mark-as-read |
-| Roles | `role` column on `users`, `admin` and `manage-inventory` Gates; the first seeded account is promoted to admin |
+| Roles | `role` column on `users` with `admin`, `manage-users`, `manage-inventory`, `create-orders`, `fulfil-orders` and `export-reports` Gates; admin manages accounts, admin/manager manage stock and fulfil orders, staff can draft orders, and plain users are read-only |
 | Real-time dashboard | `GET /api/dashboard/stats`, `/api/products/low-stock`, `/api/transactions/recent` with API Resources; `public/js/dashboard.js` polls every 30 seconds and animates value changes |
 | Adjustments | `GET/POST /transactions/adjust` calculates the difference between system and physical count and writes an adjustment transaction |
 | Product history & reports | Running balance and date filter on the product page; `reports.index` with stock movement, low stock and valuation sections plus CSV export |
@@ -176,8 +177,10 @@ C:\xampp2\php\php.exe artisan serve --host=127.0.0.1 --port=8001
 ```
 
 Then open <http://127.0.0.1:8001> and sign in with the credentials above.
-The admin account can record movements, apply adjustments and delete audit rows;
-ordinary users can browse the inventory, transactions and reports.
+The admin account can manage users, record movements, apply adjustments and delete audit rows.
+Managers can manage the catalog, stock and order fulfilment. Staff can review records and
+prepare purchase/sales orders, but cannot receive stock, complete orders, export reports or
+manage accounts. Ordinary users have read-only access to inventory, transactions and reports.
 
 ### Design decisions
 
