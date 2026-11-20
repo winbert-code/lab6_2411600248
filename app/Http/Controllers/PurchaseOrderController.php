@@ -8,6 +8,7 @@ use App\Models\ActivityLog;
 use App\Models\InventoryTransaction;
 use App\Models\Product;
 use App\Models\PurchaseOrder;
+use App\Support\NotifiesOrderActions;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,6 +16,8 @@ use Illuminate\Support\Facades\DB;
 
 class PurchaseOrderController extends Controller
 {
+    use NotifiesOrderActions;
+
     public function index(Request $request): View
     {
         $search = trim($request->string('search')->toString());
@@ -93,6 +96,14 @@ class PurchaseOrderController extends Controller
             $order,
         );
 
+        $this->notifyOppositeRole(
+            'Purchase order',
+            $order->order_number,
+            'created',
+            auth()->user(),
+            route('purchase-orders.show', $order),
+        );
+
         return redirect()->route('purchase-orders.show', $order)
             ->with('success', 'Purchase order created. Receive it when the stock arrives.');
     }
@@ -142,6 +153,14 @@ class PurchaseOrderController extends Controller
             $purchaseOrder,
         );
 
+        $this->notifyOppositeRole(
+            'Purchase order',
+            $purchaseOrder->order_number,
+            'updated',
+            auth()->user(),
+            route('purchase-orders.show', $purchaseOrder),
+        );
+
         return redirect()->route('purchase-orders.show', $purchaseOrder)
             ->with('success', 'Purchase order updated.');
     }
@@ -160,6 +179,14 @@ class PurchaseOrderController extends Controller
             ActivityLog::MODULE_PURCHASE_ORDER,
             ActivityLog::ACTION_CANCELLED,
             "Draft purchase order {$number} was deleted.",
+        );
+
+        $this->notifyOppositeRole(
+            'Purchase order',
+            $number,
+            'deleted',
+            auth()->user(),
+            route('purchase-orders.index'),
         );
 
         return redirect()->route('purchase-orders.index')
@@ -195,6 +222,14 @@ class PurchaseOrderController extends Controller
             $purchaseOrder,
         );
 
+        $this->notifyOppositeRole(
+            'Purchase order',
+            $purchaseOrder->order_number,
+            'received',
+            auth()->user(),
+            route('purchase-orders.show', $purchaseOrder),
+        );
+
         return redirect()->route('purchase-orders.show', $purchaseOrder)
             ->with('success', 'Purchase order received and stock levels updated.');
     }
@@ -210,6 +245,14 @@ class PurchaseOrderController extends Controller
             ActivityLog::ACTION_CANCELLED,
             "Purchase order {$purchaseOrder->order_number} was cancelled.",
             $purchaseOrder,
+        );
+
+        $this->notifyOppositeRole(
+            'Purchase order',
+            $purchaseOrder->order_number,
+            'cancelled',
+            auth()->user(),
+            route('purchase-orders.show', $purchaseOrder),
         );
 
         return redirect()->route('purchase-orders.show', $purchaseOrder)

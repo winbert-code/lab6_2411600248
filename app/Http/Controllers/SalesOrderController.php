@@ -9,6 +9,7 @@ use App\Models\ActivityLog;
 use App\Models\InventoryTransaction;
 use App\Models\Product;
 use App\Models\SalesOrder;
+use App\Support\NotifiesOrderActions;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -16,6 +17,8 @@ use Illuminate\Support\Facades\DB;
 
 class SalesOrderController extends Controller
 {
+    use NotifiesOrderActions;
+
     public function index(Request $request): View
     {
         $search = trim($request->string('search')->toString());
@@ -60,7 +63,7 @@ class SalesOrderController extends Controller
                 'order_date' => now()->toDateString(),
             ]),
             'items' => collect([['product_id' => '', 'quantity' => 1, 'unit_price' => '']]),
-            'products' => Product::orderBy('name')->get(),
+            'products' => Product::query()->active()->where('quantity', '>', 0)->orderBy('name')->get(),
             'action' => route('sales-orders.store'),
             'method' => 'POST',
             'editing' => false,
@@ -94,8 +97,16 @@ class SalesOrderController extends Controller
             $order,
         );
 
+        $this->notifyOppositeRole(
+            'Sales order',
+            $order->order_number,
+            'created',
+            auth()->user(),
+            route('sales-orders.show', $order),
+        );
+
         return redirect()->route('sales-orders.show', $order)
-            ->with('success', 'Sales order created. Complete it when the items are shipped.');
+            ->with('success', 'Sales order created. An admin must approve it before it can be completed.');
     }
 
     public function show(SalesOrder $salesOrder): View
@@ -112,7 +123,7 @@ class SalesOrderController extends Controller
         return view('sales-orders.form', [
             'order' => $salesOrder,
             'items' => $salesOrder->items,
-            'products' => Product::orderBy('name')->get(),
+            'products' => Product::query()->active()->where('quantity', '>', 0)->orderBy('name')->get(),
             'action' => route('sales-orders.update', $salesOrder),
             'method' => 'PUT',
             'editing' => true,
@@ -143,6 +154,14 @@ class SalesOrderController extends Controller
             $salesOrder,
         );
 
+        $this->notifyOppositeRole(
+            'Sales order',
+            $salesOrder->order_number,
+            'updated',
+            auth()->user(),
+            route('sales-orders.show', $salesOrder),
+        );
+
         return redirect()->route('sales-orders.show', $salesOrder)
             ->with('success', 'Sales order updated.');
     }
@@ -163,28 +182,65 @@ class SalesOrderController extends Controller
             "Pending sales order {$number} was deleted.",
         );
 
+        $this->notifyOppositeRole(
+            'Sales order',
+            $number,
+            'deleted',
+            auth()->user(),
+            route('sales-orders.index'),
+        );
+
         return redirect()->route('sales-orders.index')
             ->with('success', 'Pending sales order deleted.');
+    }
+
+    /** Admin approval is required before any sales order can deduct stock. */
+    public function approve(SalesOrder $salesOrder): RedirectResponse
+    {
+        abort_unless($salesOrder->isPending(), 403, 'Only pending sales orders can be approved.');
+        abort_if($salesOrder->items()->doesntExist(), 422, 'A sales order needs at least one item before it can be approved.');
+
+        $stockError = $this->stockErrorFor($salesOrder);
+
+        if ($stockError !== null) {
+            return back()->with('error', $stockError);
+        }
+
+        $salesOrder->update([
+            'status' => SalesOrder::STATUS_APPROVED,
+            'approved_at' => now(),
+            'approved_by' => auth()->id(),
+        ]);
+
+        ActivityLog::record(
+            ActivityLog::MODULE_SALES_ORDER,
+            ActivityLog::ACTION_APPROVED,
+            "Sales order {$salesOrder->order_number} was approved by ".auth()->user()->name.'.',
+            $salesOrder,
+        );
+
+        $this->notifyOppositeRole(
+            'Sales order',
+            $salesOrder->order_number,
+            'approved',
+            auth()->user(),
+            route('sales-orders.show', $salesOrder),
+        );
+
+        return redirect()->route('sales-orders.show', $salesOrder)
+            ->with('success', 'Sales order approved. It can now be completed.');
     }
 
     /** Completing an order turns every item into a stock-out movement. */
     public function complete(SalesOrder $salesOrder): RedirectResponse
     {
-        abort_unless($salesOrder->isPending(), 403, 'This sales order has already been processed.');
+        abort_unless($salesOrder->isApproved(), 403, 'Only approved sales orders can be completed.');
         abort_if($salesOrder->items()->doesntExist(), 422, 'A sales order needs at least one item before it can be completed.');
 
-        // Aggregate the requested quantity per product so duplicated lines are
-        // checked correctly before any stock movement is written.
-        $required = $salesOrder->items
-            ->groupBy('product_id')
-            ->map(fn ($items) => (int) $items->sum('quantity'));
+        $stockError = $this->stockErrorFor($salesOrder);
 
-        foreach ($required as $productId => $quantity) {
-            $product = Product::query()->findOrFail($productId);
-
-            if ((int) $product->quantity < $quantity) {
-                return back()->with('error', "Insufficient stock for {$product->name}. Only {$product->quantity} unit(s) are available.");
-            }
+        if ($stockError !== null) {
+            return back()->with('error', $stockError);
         }
 
         try {
@@ -214,13 +270,21 @@ class SalesOrderController extends Controller
             $salesOrder,
         );
 
+        $this->notifyOppositeRole(
+            'Sales order',
+            $salesOrder->order_number,
+            'completed',
+            auth()->user(),
+            route('sales-orders.show', $salesOrder),
+        );
+
         return redirect()->route('sales-orders.show', $salesOrder)
             ->with('success', 'Sales order completed and stock levels updated.');
     }
 
     public function cancel(SalesOrder $salesOrder): RedirectResponse
     {
-        abort_unless($salesOrder->isPending(), 403, 'Only pending sales orders can be cancelled.');
+        abort_unless($salesOrder->isPending() || $salesOrder->isApproved(), 403, 'Only pending or approved sales orders can be cancelled.');
 
         $salesOrder->update(['status' => SalesOrder::STATUS_CANCELLED]);
 
@@ -231,8 +295,42 @@ class SalesOrderController extends Controller
             $salesOrder,
         );
 
+        $this->notifyOppositeRole(
+            'Sales order',
+            $salesOrder->order_number,
+            'cancelled',
+            auth()->user(),
+            route('sales-orders.show', $salesOrder),
+        );
+
         return redirect()->route('sales-orders.show', $salesOrder)
             ->with('success', 'Sales order cancelled.');
+    }
+
+    private function stockErrorFor(SalesOrder $salesOrder): ?string
+    {
+        // Aggregate per product so duplicated lines are checked together.
+        $required = $salesOrder->items
+            ->groupBy('product_id')
+            ->map(fn ($items) => (int) $items->sum('quantity'));
+
+        foreach ($required as $productId => $quantity) {
+            $product = Product::query()->find($productId);
+
+            if ($product === null) {
+                return 'One of the ordered products no longer exists.';
+            }
+
+            if ((int) $product->quantity <= 0) {
+                return "{$product->name} is out of stock and cannot be processed.";
+            }
+
+            if ((int) $product->quantity < $quantity) {
+                return "Insufficient stock for {$product->name}. Only {$product->quantity} unit(s) are available.";
+            }
+        }
+
+        return null;
     }
 
     /** @param  array<int, array<string, mixed>>  $items */

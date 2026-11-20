@@ -15,12 +15,15 @@ class SalesOrder extends Model
 
     public const STATUS_PENDING = 'pending';
 
+    public const STATUS_APPROVED = 'approved';
+
     public const STATUS_COMPLETED = 'completed';
 
     public const STATUS_CANCELLED = 'cancelled';
 
     public const STATUSES = [
-        self::STATUS_PENDING => 'Pending',
+        self::STATUS_PENDING => 'Pending approval',
+        self::STATUS_APPROVED => 'Approved',
         self::STATUS_COMPLETED => 'Completed',
         self::STATUS_CANCELLED => 'Cancelled',
     ];
@@ -33,6 +36,8 @@ class SalesOrder extends Model
         'status',
         'notes',
         'user_id',
+        'approved_at',
+        'approved_by',
     ];
 
     protected function casts(): array
@@ -40,6 +45,7 @@ class SalesOrder extends Model
         return [
             'order_date' => 'date',
             'due_date' => 'date',
+            'approved_at' => 'datetime',
         ];
     }
 
@@ -53,12 +59,25 @@ class SalesOrder extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function approvedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by');
+    }
+
     /**
      * @param  Builder<SalesOrder>  $query
      */
     public function scopePending(Builder $query): void
     {
         $query->where('status', self::STATUS_PENDING);
+    }
+
+    /**
+     * @param  Builder<SalesOrder>  $query
+     */
+    public function scopeApproved(Builder $query): void
+    {
+        $query->where('status', self::STATUS_APPROVED);
     }
 
     /**
@@ -80,6 +99,11 @@ class SalesOrder extends Model
     public function isPending(): bool
     {
         return $this->status === self::STATUS_PENDING;
+    }
+
+    public function isApproved(): bool
+    {
+        return $this->status === self::STATUS_APPROVED;
     }
 
     public function isCompleted(): bool
@@ -110,6 +134,7 @@ class SalesOrder extends Model
     public function getStatusColorAttribute(): string
     {
         return match ($this->status) {
+            self::STATUS_APPROVED => 'info',
             self::STATUS_COMPLETED => 'success',
             self::STATUS_CANCELLED => 'secondary',
             default => 'warning',

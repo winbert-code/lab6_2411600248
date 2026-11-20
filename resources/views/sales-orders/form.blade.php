@@ -20,7 +20,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h1 class="h3 fw-bold mb-1">{{ $editing ? 'Edit Sales Order' : 'New Sales Order' }}</h1>
-            <p class="text-muted mb-0">Pending orders do not affect stock until they are completed.</p>
+            <p class="text-muted mb-0">Only in-stock products can be ordered. An admin must approve the order before stock is deducted.</p>
         </div>
         <a href="{{ $editing ? route('sales-orders.show', $order) : route('sales-orders.index') }}" class="btn btn-outline-secondary">
             <i class="bi bi-arrow-left"></i> Back
@@ -182,6 +182,10 @@
                 if (!option) return;
                 const row = event.target.closest('.item-row');
                 row.querySelector('.unit-price').value = option.dataset.price || '';
+                const quantity = row.querySelector('input[name*="[quantity]"]');
+                if (quantity) {
+                    quantity.max = option.dataset.stock || '1';
+                }
             });
 
             container.addEventListener('click', function (event) {

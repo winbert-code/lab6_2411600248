@@ -114,6 +114,9 @@ Route::middleware('auth')->group(function () {
         Route::patch('sales-orders/{salesOrder}', [SalesOrderController::class, 'update'])->name('sales-orders.update');
     });
     Route::get('sales-orders/{salesOrder}', [SalesOrderController::class, 'show'])->name('sales-orders.show');
+    Route::post('sales-orders/{salesOrder}/approve', [SalesOrderController::class, 'approve'])
+        ->middleware('can:admin')
+        ->name('sales-orders.approve');
     Route::middleware('can:fulfil-orders')->group(function () {
         Route::delete('sales-orders/{salesOrder}', [SalesOrderController::class, 'destroy'])->name('sales-orders.destroy');
         Route::post('sales-orders/{salesOrder}/complete', [SalesOrderController::class, 'complete'])->name('sales-orders.complete');

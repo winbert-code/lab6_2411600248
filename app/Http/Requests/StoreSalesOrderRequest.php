@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Product;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 class StoreSalesOrderRequest extends FormRequest
 {
@@ -25,6 +27,33 @@ class StoreSalesOrderRequest extends FormRequest
             'items.*.quantity' => ['required', 'integer', 'min:1', 'max:100000'],
             'items.*.unit_price' => ['required', 'numeric', 'min:0', 'max:99999999'],
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            $productIds = collect($this->input('items', []))
+                ->pluck('product_id')
+                ->filter()
+                ->unique()
+                ->all();
+
+            if ($productIds === []) {
+                return;
+            }
+
+            $outOfStock = Product::query()
+                ->whereIn('id', $productIds)
+                ->where('quantity', '<=', 0)
+                ->pluck('name');
+
+            if ($outOfStock->isNotEmpty()) {
+                $validator->errors()->add(
+                    'items',
+                    'Out-of-stock products cannot be added to a sales order: '.$outOfStock->join(', ').'.',
+                );
+            }
+        });
     }
 
     /** @return array<string, string> */

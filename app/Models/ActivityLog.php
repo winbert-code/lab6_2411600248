@@ -41,6 +41,8 @@ class ActivityLog extends Model
 
     public const ACTION_RECEIVED = 'Received';
 
+    public const ACTION_APPROVED = 'Approved';
+
     public const ACTION_COMPLETED = 'Completed';
 
     public const ACTION_CANCELLED = 'Cancelled';
@@ -64,6 +66,7 @@ class ActivityLog extends Model
         self::ACTION_DEACTIVATED,
         self::ACTION_RESTORED,
         self::ACTION_RECEIVED,
+        self::ACTION_APPROVED,
         self::ACTION_COMPLETED,
         self::ACTION_CANCELLED,
     ];

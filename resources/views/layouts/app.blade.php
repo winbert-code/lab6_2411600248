@@ -106,7 +106,7 @@
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end notification-menu" aria-labelledby="alertsMenu">
                             <li class="d-flex justify-content-between align-items-center px-3 py-2">
-                                <span class="fw-semibold small">Low stock alerts</span>
+                                <span class="fw-semibold small">Notifications</span>
                                 @if ($unreadAlertsCount > 0)
                                     <form method="POST" action="{{ route('notifications.read-all') }}">
                                         @csrf
@@ -119,13 +119,16 @@
                             @forelse ($unreadAlerts as $alert)
                                 <li>
                                     <a class="dropdown-item py-2" href="{{ $alert->data['url'] ?? route('products.index') }}">
-                                        <i class="bi {{ $alert->data['icon'] ?? 'bi-exclamation-triangle' }} text-warning"></i>
-                                        <span class="d-block small fw-semibold">{{ $alert->data['title'] ?? 'Low stock alert' }}</span>
+                                        <i class="bi {{ $alert->data['icon'] ?? 'bi-exclamation-triangle' }} text-{{ $alert->data['color'] ?? 'warning' }}"></i>
+                                        <span class="d-block small fw-semibold">{{ $alert->data['title'] ?? 'Notification' }}</span>
+                                        @if (! empty($alert->data['message']))
+                                            <span class="d-block text-muted small">{{ $alert->data['message'] }}</span>
+                                        @endif
                                         <span class="d-block text-muted small">{{ $alert->created_at?->diffForHumans() }}</span>
                                     </a>
                                 </li>
                             @empty
-                                <li><span class="dropdown-item-text small text-muted">No unread alerts.</span></li>
+                                <li><span class="dropdown-item-text small text-muted">No unread notifications.</span></li>
                             @endforelse
                         </ul>
                     </li>

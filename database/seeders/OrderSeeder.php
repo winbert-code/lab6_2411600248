@@ -16,9 +16,11 @@ class OrderSeeder extends Seeder
     public function run(): void
     {
         $user = User::query()->where('role', User::ROLE_ADMIN)->first();
+        $staff = User::query()->where('email', 'staff@bytestock.test')->first()
+            ?? User::query()->where('role', User::ROLE_STAFF)->first();
 
         $this->seedPurchaseOrders($user);
-        $this->seedSalesOrders($user);
+        $this->seedSalesOrders($user, $staff);
     }
 
     private function seedPurchaseOrders(?User $user): void
@@ -118,8 +120,16 @@ class OrderSeeder extends Seeder
         }
     }
 
-    private function seedSalesOrders(?User $user): void
+    private function seedSalesOrders(?User $user, ?User $staff): void
     {
+        SalesOrder::query()
+            ->where('status', SalesOrder::STATUS_COMPLETED)
+            ->whereNull('approved_at')
+            ->update([
+                'approved_at' => DB::raw('COALESCE(order_date, created_at)'),
+                'approved_by' => $user?->id,
+            ]);
+
         $orders = [
             [
                 'order_number' => 'DEMO-SO-1001',
@@ -177,6 +187,19 @@ class OrderSeeder extends Seeder
                     ['sku' => 'PER-KEY-K8P', 'quantity' => 2, 'unit_price' => 129.00],
                 ],
             ],
+            [
+                'order_number' => 'DEMO-SO-1006',
+                'customer' => 'Staff Desk — Walk-in',
+                'order_date' => now()->toDateString(),
+                'due_date' => now()->addDays(2)->toDateString(),
+                'status' => SalesOrder::STATUS_PENDING,
+                'notes' => 'Prepared by staff and waiting for admin approval.',
+                'user_id' => $staff?->id,
+                'items' => [
+                    ['sku' => 'PSU-COR-RM750', 'quantity' => 2, 'unit_price' => 95.00],
+                    ['sku' => 'RAM-COR-32D5', 'quantity' => 1, 'unit_price' => 115.00],
+                ],
+            ],
         ];
 
         foreach ($orders as $data) {
@@ -189,6 +212,13 @@ class OrderSeeder extends Seeder
 
             $order = DB::transaction(function () use ($data, $items, $user) {
                 $order = SalesOrder::create($data + ['user_id' => $user?->id]);
+
+                if ($order->isCompleted()) {
+                    $order->update([
+                        'approved_at' => $order->order_date?->copy()->addDay() ?? now(),
+                        'approved_by' => $user?->id,
+                    ]);
+                }
 
                 foreach ($items as $item) {
                     $product = Product::query()->where('sku', $item['sku'])->first();

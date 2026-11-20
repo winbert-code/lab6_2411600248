@@ -10,7 +10,9 @@ use App\Models\Product;
 use App\Models\PurchaseOrder;
 use App\Models\SalesOrder;
 use App\Models\User;
+use App\Notifications\OrderActionNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class OrderManagementTest extends TestCase
@@ -98,8 +100,12 @@ class OrderManagementTest extends TestCase
             'unit_price' => 150.00,
         ]);
 
-        $this->actingAs($this->user)
-            ->post(route('sales-orders.complete', $order))
+        $this->actingAs($this->user);
+
+        $this->post(route('sales-orders.approve', $order))
+            ->assertRedirect(route('sales-orders.show', $order));
+
+        $this->post(route('sales-orders.complete', $order))
             ->assertRedirect(route('sales-orders.show', $order));
 
         $this->assertSame(16, $this->product->fresh()->quantity);
@@ -116,7 +122,7 @@ class OrderManagementTest extends TestCase
         ]);
     }
 
-    public function test_duplicate_order_lines_are_checked_together_before_completion(): void
+    public function test_duplicate_order_lines_are_checked_together_before_approval(): void
     {
         $order = SalesOrder::create([
             'order_number' => 'SO-TEST-002',
@@ -138,7 +144,7 @@ class OrderManagementTest extends TestCase
 
         $this->actingAs($this->user)
             ->from(route('sales-orders.show', $order))
-            ->post(route('sales-orders.complete', $order))
+            ->post(route('sales-orders.approve', $order))
             ->assertRedirect(route('sales-orders.show', $order))
             ->assertSessionHas('error');
 
@@ -160,5 +166,160 @@ class OrderManagementTest extends TestCase
         $this->actingAs($this->user)
             ->get(route('purchase-orders.edit', $order))
             ->assertForbidden();
+    }
+
+    public function test_out_of_stock_products_cannot_be_added_to_a_sales_order(): void
+    {
+        $this->product->update(['quantity' => 0]);
+
+        $this->actingAs($this->user)
+            ->post(route('sales-orders.store'), [
+                'customer' => 'Walk-in Customer',
+                'order_date' => now()->toDateString(),
+                'items' => [[
+                    'product_id' => $this->product->id,
+                    'quantity' => 1,
+                    'unit_price' => 100.00,
+                ]],
+            ])
+            ->assertSessionHasErrors('items');
+
+        $this->assertDatabaseCount('sales_orders', 0);
+    }
+
+    public function test_every_sales_order_needs_admin_approval_before_completion(): void
+    {
+        $order = SalesOrder::create([
+            'order_number' => 'SO-TEST-003',
+            'customer' => 'Test Customer',
+            'order_date' => now()->toDateString(),
+            'status' => SalesOrder::STATUS_PENDING,
+            'user_id' => $this->user->id,
+        ]);
+        $order->items()->create([
+            'product_id' => $this->product->id,
+            'quantity' => 2,
+            'unit_price' => 150.00,
+        ]);
+
+        $this->actingAs($this->user)
+            ->post(route('sales-orders.complete', $order))
+            ->assertForbidden();
+
+        $this->assertSame(SalesOrder::STATUS_PENDING, $order->fresh()->status);
+
+        $this->post(route('sales-orders.approve', $order))
+            ->assertRedirect(route('sales-orders.show', $order));
+
+        $this->assertSame(SalesOrder::STATUS_APPROVED, $order->fresh()->status);
+        $this->assertSame($this->user->id, $order->fresh()->approved_by);
+    }
+
+    public function test_staff_cannot_approve_a_sales_order(): void
+    {
+        $staff = User::forceCreate([
+            'name' => 'Staff User',
+            'email' => 'staff@example.test',
+            'password' => bcrypt('password123'),
+            'role' => User::ROLE_STAFF,
+            'status' => User::STATUS_ACTIVE,
+        ]);
+
+        $order = SalesOrder::create([
+            'order_number' => 'SO-TEST-004',
+            'customer' => 'Test Customer',
+            'order_date' => now()->toDateString(),
+            'status' => SalesOrder::STATUS_PENDING,
+            'user_id' => $staff->id,
+        ]);
+        $order->items()->create([
+            'product_id' => $this->product->id,
+            'quantity' => 1,
+            'unit_price' => 150.00,
+        ]);
+
+        $this->actingAs($staff)
+            ->post(route('sales-orders.approve', $order))
+            ->assertForbidden();
+
+        $this->assertSame(SalesOrder::STATUS_PENDING, $order->fresh()->status);
+    }
+
+    public function test_purchase_order_actions_notify_admin_and_staff_both_ways(): void
+    {
+        Notification::fake();
+
+        $staff = User::forceCreate([
+            'name' => 'Staff User',
+            'email' => 'staff@example.test',
+            'password' => bcrypt('password123'),
+            'role' => User::ROLE_STAFF,
+            'status' => User::STATUS_ACTIVE,
+        ]);
+
+        $this->actingAs($staff)
+            ->post(route('purchase-orders.store'), [
+                'supplier' => 'Test Supplier',
+                'order_date' => now()->toDateString(),
+                'items' => [[
+                    'product_id' => $this->product->id,
+                    'quantity' => 2,
+                    'unit_cost' => 80.00,
+                ]],
+            ])
+            ->assertRedirect();
+
+        $order = PurchaseOrder::query()->where('supplier', 'Test Supplier')->firstOrFail();
+
+        Notification::assertSentTo($this->user, OrderActionNotification::class,
+            fn (OrderActionNotification $notification) => $notification->module === 'Purchase order'
+                && $notification->action === 'created');
+
+        $this->actingAs($this->user)
+            ->post(route('purchase-orders.receive', $order))
+            ->assertRedirect(route('purchase-orders.show', $order));
+
+        Notification::assertSentTo($staff, OrderActionNotification::class,
+            fn (OrderActionNotification $notification) => $notification->module === 'Purchase order'
+                && $notification->action === 'received');
+    }
+
+    public function test_sales_order_creation_notifies_admin_and_approval_notifies_staff(): void
+    {
+        Notification::fake();
+
+        $staff = User::forceCreate([
+            'name' => 'Staff User',
+            'email' => 'staff@example.test',
+            'password' => bcrypt('password123'),
+            'role' => User::ROLE_STAFF,
+            'status' => User::STATUS_ACTIVE,
+        ]);
+
+        $this->actingAs($staff)
+            ->post(route('sales-orders.store'), [
+                'customer' => 'Walk-in Customer',
+                'order_date' => now()->toDateString(),
+                'items' => [[
+                    'product_id' => $this->product->id,
+                    'quantity' => 2,
+                    'unit_price' => 150.00,
+                ]],
+            ])
+            ->assertRedirect();
+
+        $order = SalesOrder::query()->where('customer', 'Walk-in Customer')->firstOrFail();
+
+        Notification::assertSentTo($this->user, OrderActionNotification::class,
+            fn (OrderActionNotification $notification) => $notification->module === 'Sales order'
+                && $notification->action === 'created');
+
+        $this->actingAs($this->user)
+            ->post(route('sales-orders.approve', $order))
+            ->assertRedirect(route('sales-orders.show', $order));
+
+        Notification::assertSentTo($staff, OrderActionNotification::class,
+            fn (OrderActionNotification $notification) => $notification->module === 'Sales order'
+                && $notification->action === 'approved');
     }
 }

@@ -19,18 +19,31 @@
                     </a>
                 @endif
             @endcan
-            @can('fulfil-orders')
+            @can('admin')
                 @if ($order->isPending())
-                    <form method="POST" action="{{ route('sales-orders.complete', $order) }}"
-                          onsubmit="return confirm('Complete this order? Stock levels will decrease immediately.')">
+                    <form method="POST" action="{{ route('sales-orders.approve', $order) }}"
+                          onsubmit="return confirm('Approve this sales order?')">
                         @csrf
-                        <button class="btn btn-success" type="submit"><i class="bi bi-box-arrow-out-down"></i> Complete order</button>
+                        <button class="btn btn-primary" type="submit"><i class="bi bi-check2-circle"></i> Approve order</button>
                     </form>
+                @endif
+                @if ($order->isPending() || $order->isApproved())
                     <form method="POST" action="{{ route('sales-orders.cancel', $order) }}"
                           onsubmit="return confirm('Cancel this sales order?')">
                         @csrf
                         <button class="btn btn-outline-warning" type="submit">Cancel order</button>
                     </form>
+                @endif
+            @endcan
+            @can('fulfil-orders')
+                @if ($order->isApproved())
+                    <form method="POST" action="{{ route('sales-orders.complete', $order) }}"
+                          onsubmit="return confirm('Complete this order? Stock levels will decrease immediately.')">
+                        @csrf
+                        <button class="btn btn-success" type="submit"><i class="bi bi-box-arrow-out-down"></i> Complete order</button>
+                    </form>
+                @endif
+                @if ($order->isPending())
                     <form method="POST" action="{{ route('sales-orders.destroy', $order) }}"
                           onsubmit="return confirm('Delete this pending order permanently?')">
                         @csrf
@@ -52,6 +65,10 @@
                     <dl class="row mb-0">
                         <dt class="col-5 text-muted">Status</dt>
                         <dd class="col-7"><span class="badge bg-{{ $order->status_color }}">{{ $order->status_label }}</span></dd>
+                        <dt class="col-5 text-muted">Approved by</dt>
+                        <dd class="col-7">{{ $order->approvedBy?->name ?? '—' }}</dd>
+                        <dt class="col-5 text-muted">Approved at</dt>
+                        <dd class="col-7">{{ $order->approved_at?->format('M d, Y h:i A') ?? '—' }}</dd>
                         <dt class="col-5 text-muted">Customer</dt>
                         <dd class="col-7">{{ $order->customer }}</dd>
                         <dt class="col-5 text-muted">Order date</dt>
