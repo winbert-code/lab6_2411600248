@@ -1,7 +1,8 @@
 # ByteStock — Computer Parts Inventory Management System
 
-Laravel MVC implementation of Laboratory Exercise 5, using the suggested theme
-**computer parts shop** instead of the generic hardware-store example.
+Laravel MVC implementation of Laboratory Exercise 6, extending the Lab 5
+ByteStock project with the suggested **computer parts shop** theme instead of
+the generic hardware-store example. Lab 5 itself is left unchanged.
 
 ## Theme & visual identity
 
@@ -137,6 +138,27 @@ applied without a frontend build step.
 
 This folder extends the Lab 5 project with the real-time inventory features.
 
+### Lab 5 features updated in Lab 6
+
+| Lab 5 feature | What changed in Lab 6 |
+| --- | --- |
+| Environment & database | Same Laravel 13 + MySQL setup and shared `computer_parts_inventory` database. Lab 6 runs on port **8001** so Lab 5 stays on **8000**; new migrations are guarded so the two projects can share the database safely. |
+| Authentication | Same custom login/register views, hashed passwords, `remember me`, throttling and guest/auth middleware. Added the inactive-user login guard and now records every sign-in/sign-out in the Activity Log. |
+| Users & roles | Lab 5's admin/staff accounts and role/status filters are kept. Lab 6 adds **manager** and plain **user** roles, makes user management admin-only, keeps the “cannot deactivate yourself” rule, and drives access through Gates instead of ad-hoc checks. |
+| Models & migrations | `User`, `Brand`, `Category`, `Product`, `InventoryTransaction` and `ActivityLog` are carried over. Lab 6 adds `PurchaseOrder`, `PurchaseOrderItem`, `SalesOrder`, `SalesOrderItem` and the `notifications` table. |
+| Brands & categories | Same first-class tables/pages, soft deactivate/restore and “inactive items hidden from new-product dropdowns but kept on existing products” behavior. Write actions are now limited to admin/manager by the `manage-inventory` Gate. |
+| Products CRUD | Same resource controller, implicit binding, uppercase unique SKU and soft deactivate/restore. Validation now also rejects inactive brands/categories, and stock changes flow through observer-written transactions instead of direct quantity edits. |
+| Validation | SKU uniqueness and custom messages are retained. Added active brand/category checks, aggregated stock checks before sales fulfilment, and an out-of-stock guard that excludes zero-quantity products from sales orders. |
+| Navigation & layout | All Lab 5 links remain. Added Purchase Orders, Sales Orders, Transactions, Reports and the bell notification menu; Users is now admin-only, and staff get a role notice plus hidden stock actions. |
+| Dashboard | Kept the live statistics cards, recent products and category chart. Added a low-stock panel, recent transaction feed and recent-activity panel; the Lab 5 brand summary was replaced by category totals and the transaction feed. Dashboard data is now also polled by API. |
+| Blade views | Kept `layouts/app`, `layouts/guest`, dashboard, inventory, product/category/brand/user CRUD and activity-log views. Added order, transaction, report and notification views, plus reusable role-aware navbar actions. |
+| Routes | Same guest/auth routing pattern. Added role middleware for users/catalog/stock/orders/reports, order approval and notification routes, and hardened malformed-URL handling with a fallback plus `NotFoundHttpException` renderer. |
+| Stock audit trail | The Lab 5 `inventory_transactions` table is retained and expanded with `in`/`out`/`adjustment` types, reference, reason, running balance and audit scopes. Product history now shows the running balance and date filters. |
+| Activity Log | Still the audit log for sign-ins, registrations and every create/update/deactivate/restore across products, categories, brands and users, with the same search/module/action/user filters and dashboard panel. Lab 6 drops Lab 5's page-visit/search logging and adds order create/update/receive/approve/complete/cancel entries. |
+| Inactive records | Soft deactivate/restore is retained for products, brands and categories, and extended to user accounts with the inactive-login rejection. |
+| Seeder & theme | Same 20-product seeder and Green Rush theme. Added demo staff user, purchase/sales orders, staff low-stock alert and order notifications. |
+| Testing | Lab 5's browser checks were kept. Lab 6 adds 28 automated tests covering stock movements, orders, approvals, notifications and role permissions. |
+
 ### What was added
 
 | Lab 6 part | Implementation |
@@ -153,7 +175,7 @@ This folder extends the Lab 5 project with the real-time inventory features.
 | Adjustments | `GET/POST /transactions/adjust` calculates the difference between system and physical count and writes an adjustment transaction |
 | Product history & reports | Running balance and date filter on the product page; `reports.index` with stock movement, low stock and valuation sections plus CSV export |
 | Malformed URL handling | Root `server.php` router plus a `NotFoundHttpException` handler: slash/dot combos such as `//////.......//////` and random elements appended to a link return to the current page instead of a 404 |
-| Tests | `tests/Feature/InventoryTrackingTest.php` — 10 inventory-specific tests (12 total with the skeleton tests) |
+| Tests | 28 automated tests covering inventory tracking, purchase/sales orders, admin approval, notifications and role permissions |
 
 ### Running Lab 6
 
