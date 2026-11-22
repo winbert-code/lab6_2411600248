@@ -63,18 +63,18 @@ the generic hardware-store example. Lab 5 itself is left unchanged.
 | Brands & categories | First-class `brands` and `categories` tables with their own pages under **Brands** and **Categories**; removing an item marks it inactive (never deletes it), and the restore button makes it available for stock again; inactive items are hidden from new-product dropdowns but kept for products already using them |
 | CRUD controller | `app\Http\Controllers\ProductController.php` (resource controller with implicit route binding) |
 | Validation | `StoreProductRequest` / `UpdateProductRequest` with custom messages, SKU uniqueness on create/update, normalized uppercase SKU, active brand/category validation |
-| Navigation | Dashboard, Inventory (stock overview), Products (CRUD + deactivate/restore), Purchase Orders, Sales Orders, Categories (CRUD + deactivate/restore), Brands (CRUD + deactivate/restore), Users (admin only), Activity Log, Transactions, Reports |
-| Blade views | `layouts/app`, `layouts/guest`, dashboard, inventory, product index/create/edit/show, purchase/sales order index/form/show, category/brand/user CRUD views, activity log, reusable `components/stock-badge`, shared form partials |
-| Routes | `routes/web.php`: guest auth routes + auth-protected dashboard, inventory, resource routes for products, categories, brands and users, plus purchase/sales orders, activity log, transactions, reports and notifications |
+| Navigation | Dashboard, Inventory (stock overview), Products (CRUD + deactivate/restore), Purchase Orders, Sales Orders, Receipts, Categories (CRUD + deactivate/restore), Brands (CRUD + deactivate/restore), Users (admin only), Activity Log, Transactions, Reports |
+| Blade views | `layouts/app`, `layouts/guest`, dashboard, inventory, product index/create/edit/show, purchase/sales order index/form/show, sales receipt list/detail, category/brand/user CRUD views, activity log, reusable `components/stock-badge`, shared form partials |
+| Routes | `routes/web.php`: guest auth routes + auth-protected dashboard, inventory, resource routes for products, categories, brands and users, plus purchase/sales orders, sales receipts, activity log, transactions, reports and notifications |
 | Dashboard with real data | `DashboardController` computes product count, low/out-of-stock counts, total inventory value, recent products, category totals, and chart data |
 | Seeder | `ProductSeeder` inserts 20 realistic computer parts across 10 categories, including low-stock and out-of-stock examples; `UserSeeder` adds a demo staff account; `StaffNotificationSeeder` puts one example low-stock alert in that account's bell; `OrderSeeder` adds 3 demo purchase orders and 6 demo sales orders (draft/pending, a staff-pending order, plus received/completed) and reuses matching demo stock movements so stock is not deducted twice |
 | Theme integration | `public/css/app.css` CSS variables override Bootstrap defaults; same style on auth and app pages |
 | Stock audit trail | `inventory_transactions` table logs initial stock and quantity adjustments, shown on the product detail page |
 | Purchase orders | `PurchaseOrder` + `PurchaseOrderItem` with draft/received/cancelled statuses, multi-line items, edit/delete while draft, and **Receive stock** which writes one stock-in transaction per line through the observer so quantities and balances stay in sync; every staff/admin action sends a bell notification to the other role |
-| Sales orders | `SalesOrder` + `SalesOrderItem` with pending/approved/completed/cancelled statuses, stock-aware item form that lists only in-stock products, aggregated stock validation before approval and fulfilment, and **Complete order** which writes stock-out transactions through the same observer; every sales order needs admin approval and out-of-stock orders are rejected; completed orders get a printable sales receipt |
+| Sales orders | `SalesOrder` + `SalesOrderItem` with pending/approved/completed/cancelled statuses, stock-aware item form that lists only in-stock products, aggregated stock validation before approval and fulfilment, and **Complete order** which writes stock-out transactions through the same observer; every sales order needs admin approval and out-of-stock orders are rejected; completed orders get a view-only sales receipt |
 | Activity log (audit log) | `ActivityLog` model and `activity-logs.index` page (ported from Lab 5) record sign-ins, registrations and every create/update/deactivate/restore action across products, categories, brands and users, with search and module/action/user filters and a recent-activity panel on the dashboard |
 | Inactive products | The delete action sets `status` to `inactive` instead of removing rows; products and inventory history stay in the database and can be restored |
-| Testing | 29 automated tests (12 inventory-tracking + 10 order-management + 6 role-access + 1 staff notification) plus browser verification of login, dashboard statistics, inventory overview, product/category/brand CRUD, inactive brand/category restore, user roles, inactive-user login rejection, transaction logging, reports, order approval/receive/complete flows, printable receipts, notification bells and deactivate/restore |
+| Testing | 29 automated tests (12 inventory-tracking + 10 order-management + 6 role-access + 1 staff notification) plus browser verification of login, dashboard statistics, inventory overview, product/category/brand CRUD, inactive brand/category restore, user roles, inactive-user login rejection, transaction logging, reports, order approval/receive/complete flows, view-only receipts and receipt lists, notification bells and deactivate/restore |
 
 ## Important files
 
@@ -119,6 +119,7 @@ resources/views/activity-logs/*.blade.php
 resources/views/inventory/*.blade.php
 resources/views/products/*.blade.php
 resources/views/sales-orders/receipt.blade.php
+resources/views/sales-orders/receipts.blade.php
 resources/views/brands/*.blade.php
 resources/views/categories/*.blade.php
 resources/views/users/*.blade.php
@@ -171,7 +172,7 @@ This folder extends the Lab 5 project with the real-time inventory features.
 | Product model helpers | `latestTransaction()`, `isLowStock()`, `isOutOfStock()`, `stock status/color` accessors, `lowStock()`, `outOfStock()` and `inCategory()` scopes |
 | Low stock notifications | Queued `LowStockNotification` (database + mail), `notifications` table, role-based recipients (admin/manager/staff) and hour-long dedupe; bell dropdown with unread count, mark-as-read and a seeded staff example |
 | Order action notifications | `OrderActionNotification` plus `NotifiesOrderActions`; staff purchase-order and sales-order actions notify admins, and admin/manager actions notify staff in the same bell dropdown |
-| Sales receipt | `GET /sales-orders/{salesOrder}/receipt` renders a print-only receipt for completed orders with customer, dates, preparer/approver, item lines and total paid; the button is hidden for pending or approved orders |
+| Sales receipt | `GET /receipts` lists every completed sales order; `GET /sales-orders/{salesOrder}/receipt` renders a view-only receipt with customer, dates, preparer/approver, item lines and total paid. There is no print button or print CSS; buttons are hidden for pending or approved orders |
 | Roles | `role` column on `users` with `admin`, `manage-users`, `manage-inventory`, `create-orders`, `fulfil-orders` and `export-reports` Gates; admin manages accounts and approves every sales order, admin/manager manage stock and fulfil orders, staff can draft orders, and plain users are read-only |
 | Real-time dashboard | `GET /api/dashboard/stats`, `/api/products/low-stock`, `/api/transactions/recent` with API Resources; `public/js/dashboard.js` polls every 30 seconds and animates value changes |
 | Adjustments | `GET/POST /transactions/adjust` calculates the difference between system and physical count and writes an adjustment transaction |

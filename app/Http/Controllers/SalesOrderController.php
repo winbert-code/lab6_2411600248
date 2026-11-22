@@ -116,6 +116,32 @@ class SalesOrderController extends Controller
         return view('sales-orders.show', ['order' => $salesOrder]);
     }
 
+    public function receipts(Request $request): View
+    {
+        $search = trim($request->string('search')->toString());
+
+        $orders = SalesOrder::query()
+            ->with(['items.product:id,name,sku', 'user:id,name'])
+            ->where('status', SalesOrder::STATUS_COMPLETED)
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($query) use ($search) {
+                    $query->where('order_number', 'like', "%{$search}%")
+                        ->orWhere('customer', 'like', "%{$search}%")
+                        ->orWhereHas('items.product', fn ($q) => $q->where('name', 'like', "%{$search}%")
+                            ->orWhere('sku', 'like', "%{$search}%"));
+                });
+            })
+            ->latest('updated_at')
+            ->orderByDesc('id')
+            ->paginate(15)
+            ->withQueryString();
+
+        return view('sales-orders.receipts', [
+            'orders' => $orders,
+            'search' => $search,
+        ]);
+    }
+
     public function receipt(SalesOrder $salesOrder): View
     {
         abort_unless($salesOrder->isCompleted(), 403, 'A receipt is only available for completed sales orders.');

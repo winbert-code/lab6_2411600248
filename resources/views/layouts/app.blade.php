@@ -53,6 +53,12 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('receipts.*') ? 'active' : '' }}"
+                           href="{{ route('receipts.index') }}">
+                            <i class="bi bi-receipt"></i> Receipts
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link {{ request()->routeIs('categories.*') ? 'active' : '' }}"
                            href="{{ route('categories.index') }}">
                             <i class="bi bi-tags"></i> Categories

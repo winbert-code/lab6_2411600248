@@ -360,10 +360,29 @@ class OrderManagementTest extends TestCase
             ->assertSee('Sales Receipt')
             ->assertSee($order->order_number)
             ->assertSee($this->product->name)
-            ->assertSee('300.00');
+            ->assertSee('300.00')
+            ->assertDontSee('Print receipt')
+            ->assertDontSee('window.print()');
 
-        $this->actingAs($staff)
-            ->get(route('sales-orders.receipt', $order))
-            ->assertOk();
+        $pending = SalesOrder::create([
+            'order_number' => 'SO-TEST-006',
+            'customer' => 'Pending Receipt Customer',
+            'order_date' => now()->toDateString(),
+            'status' => SalesOrder::STATUS_PENDING,
+            'user_id' => $this->user->id,
+        ]);
+
+        $this->get(route('receipts.index'))
+            ->assertOk()
+            ->assertSee('Sales receipts')
+            ->assertSee($order->order_number)
+            ->assertSee($order->customer)
+            ->assertSee('300.00')
+            ->assertDontSee($pending->order_number);
+
+        $this->actingAs($staff);
+
+        $this->get(route('receipts.index'))->assertOk();
+        $this->get(route('sales-orders.receipt', $order))->assertOk();
     }
 }

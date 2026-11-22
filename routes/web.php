@@ -90,6 +90,9 @@ Route::middleware('auth')->group(function () {
         ->middleware('can:export-reports')
         ->name('reports.export');
 
+    // Sales receipts: read-only list of completed orders for every signed-in user.
+    Route::get('receipts', [SalesOrderController::class, 'receipts'])->name('receipts.index');
+
     // Purchase orders: staff may draft, admin/manager may receive and cancel.
     Route::get('purchase-orders', [PurchaseOrderController::class, 'index'])->name('purchase-orders.index');
     Route::middleware('can:create-orders')->group(function () {

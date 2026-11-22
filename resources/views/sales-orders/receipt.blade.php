@@ -15,14 +15,14 @@
             font-size: 13px;
             line-height: 1.4;
         }
-        .no-print {
+        .actions {
             max-width: 420px;
             margin: 0 auto 14px;
             display: flex;
             gap: 8px;
             justify-content: flex-end;
         }
-        .no-print a, .no-print button {
+        .actions a {
             border: 1px solid #0e5113;
             border-radius: 6px;
             background: #fff;
@@ -33,7 +33,6 @@
             cursor: pointer;
             text-decoration: none;
         }
-        .no-print button { background: #0e5113; color: #fff; }
         .receipt {
             max-width: 420px;
             margin: 0 auto;
@@ -61,18 +60,12 @@
         .totals .grand td { border-top: 2px solid #0e5113; font-size: 16px; font-weight: 700; padding-top: 10px; }
         .status { margin-top: 22px; text-align: center; padding: 9px; background: #e9f6e9; border: 1px solid #0e5113; color: #0e5113; font-weight: 700; letter-spacing: 1px; }
         .thanks { margin-top: 20px; text-align: center; font-size: 11px; color: #5f6b5f; }
-        @media print {
-            @page { margin: 12mm; }
-            body { background: #fff; padding: 0; font-size: 12px; }
-            .no-print { display: none !important; }
-            .receipt { max-width: none; margin: 0; padding: 0; box-shadow: none; }
-        }
     </style>
 </head>
 <body>
-    <div class="no-print">
+    <div class="actions">
+        <a href="{{ route('receipts.index') }}">All receipts</a>
         <a href="{{ route('sales-orders.show', $order) }}">Back to order</a>
-        <button type="button" onclick="window.print()">Print receipt</button>
     </div>
 
     <div class="receipt">

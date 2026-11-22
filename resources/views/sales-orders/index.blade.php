@@ -83,7 +83,7 @@
                                     <i class="bi bi-eye"></i>
                                 </a>
                                 @if ($order->isCompleted())
-                                    <a href="{{ route('sales-orders.receipt', $order) }}" class="btn btn-sm btn-outline-dark" target="_blank" rel="noopener" title="Print receipt">
+                                    <a href="{{ route('sales-orders.receipt', $order) }}" class="btn btn-sm btn-outline-dark" title="View receipt">
                                         <i class="bi bi-receipt"></i>
                                     </a>
                                 @endif
