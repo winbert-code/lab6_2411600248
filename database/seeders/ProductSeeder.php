@@ -21,7 +21,7 @@ class ProductSeeder extends Seeder
                 'quantity' => 24,
                 'reorder_level' => 8,
                 'unit_price' => 359.99,
-                'supplier' => 'AMD Distributors',
+                'supplier' => 'Brgy. Dadiangas East Supply',
             ],
             [
                 'name' => 'Intel Core i5-14600K Processor',
@@ -32,7 +32,7 @@ class ProductSeeder extends Seeder
                 'quantity' => 6,
                 'reorder_level' => 10,
                 'unit_price' => 289.50,
-                'supplier' => 'Intel Direct',
+                'supplier' => 'Purok 3, Brgy. Dadiangas North',
             ],
             [
                 'name' => 'NVIDIA GeForce RTX 4070 Super',
@@ -43,7 +43,7 @@ class ProductSeeder extends Seeder
                 'quantity' => 12,
                 'reorder_level' => 5,
                 'unit_price' => 599.00,
-                'supplier' => 'NVIDIA Partner Supply',
+                'supplier' => 'Labangal Parts Depot',
             ],
             [
                 'name' => 'ASUS Radeon RX 7800 XT',
@@ -54,7 +54,7 @@ class ProductSeeder extends Seeder
                 'quantity' => 0,
                 'reorder_level' => 4,
                 'unit_price' => 499.00,
-                'supplier' => 'ASUS Components',
+                'supplier' => 'Purok 6, Brgy. City Heights',
             ],
             [
                 'name' => 'MSI B650 Tomahawk WiFi',
@@ -65,7 +65,7 @@ class ProductSeeder extends Seeder
                 'quantity' => 18,
                 'reorder_level' => 6,
                 'unit_price' => 219.00,
-                'supplier' => 'MSI Philippines',
+                'supplier' => 'Purok 2, Brgy. Lagao',
             ],
             [
                 'name' => 'Gigabyte Z790 Aorus Elite AX',
@@ -76,7 +76,7 @@ class ProductSeeder extends Seeder
                 'quantity' => 3,
                 'reorder_level' => 6,
                 'unit_price' => 249.00,
-                'supplier' => 'Gigabyte Supply Co.',
+                'supplier' => 'Brgy. San Isidro Supply',
             ],
             [
                 'name' => 'Corsair Vengeance 32GB DDR5-6000',
@@ -87,7 +87,7 @@ class ProductSeeder extends Seeder
                 'quantity' => 45,
                 'reorder_level' => 12,
                 'unit_price' => 119.00,
-                'supplier' => 'Corsair Distribution',
+                'supplier' => 'Purok 5, Brgy. Calumpang',
             ],
             [
                 'name' => 'G.Skill Ripjaws 16GB DDR4-3200',
@@ -98,7 +98,7 @@ class ProductSeeder extends Seeder
                 'quantity' => 7,
                 'reorder_level' => 10,
                 'unit_price' => 59.00,
-                'supplier' => 'G.Skill Asia',
+                'supplier' => 'Purok 1, Brgy. Apopong',
             ],
             [
                 'name' => 'Samsung 990 PRO 2TB NVMe SSD',
@@ -109,7 +109,7 @@ class ProductSeeder extends Seeder
                 'quantity' => 30,
                 'reorder_level' => 8,
                 'unit_price' => 169.00,
-                'supplier' => 'Samsung Electronics',
+                'supplier' => 'Brgy. Fatima Electronics',
             ],
             [
                 'name' => 'WD Blue 1TB SATA SSD',
@@ -120,7 +120,7 @@ class ProductSeeder extends Seeder
                 'quantity' => 2,
                 'reorder_level' => 8,
                 'unit_price' => 69.00,
-                'supplier' => 'Western Digital',
+                'supplier' => 'Purok 4, Brgy. Mabuhay',
             ],
             [
                 'name' => 'Seagate Barracuda 4TB HDD',
@@ -131,7 +131,7 @@ class ProductSeeder extends Seeder
                 'quantity' => 15,
                 'reorder_level' => 5,
                 'unit_price' => 89.00,
-                'supplier' => 'Seagate Technology',
+                'supplier' => 'Purok 7, Brgy. Tambler',
             ],
             [
                 'name' => 'Corsair RM750e 750W Gold',
@@ -142,7 +142,7 @@ class ProductSeeder extends Seeder
                 'quantity' => 20,
                 'reorder_level' => 6,
                 'unit_price' => 109.00,
-                'supplier' => 'Corsair Distribution',
+                'supplier' => 'Purok 5, Brgy. Calumpang',
             ],
             [
                 'name' => 'be quiet! Pure Power 12 850W',
@@ -153,7 +153,7 @@ class ProductSeeder extends Seeder
                 'quantity' => 0,
                 'reorder_level' => 4,
                 'unit_price' => 139.00,
-                'supplier' => 'be quiet! Partners',
+                'supplier' => 'Purok 2, Brgy. Conel',
             ],
             [
                 'name' => 'NZXT H5 Flow ATX Case',
@@ -164,7 +164,7 @@ class ProductSeeder extends Seeder
                 'quantity' => 14,
                 'reorder_level' => 5,
                 'unit_price' => 94.00,
-                'supplier' => 'NZXT Supply',
+                'supplier' => 'Brgy. Bula Components',
             ],
             [
                 'name' => 'Lian Li O11 Dynamic Mini',
@@ -175,7 +175,7 @@ class ProductSeeder extends Seeder
                 'quantity' => 4,
                 'reorder_level' => 5,
                 'unit_price' => 129.00,
-                'supplier' => 'Lian Li Distribution',
+                'supplier' => 'Purok 8, Brgy. Labangal',
             ],
             [
                 'name' => 'Noctua NH-D15 CPU Cooler',
@@ -186,7 +186,7 @@ class ProductSeeder extends Seeder
                 'quantity' => 22,
                 'reorder_level' => 6,
                 'unit_price' => 99.00,
-                'supplier' => 'Noctua Asia',
+                'supplier' => 'Purok 5, Brgy. Upper Labay',
             ],
             [
                 'name' => 'Arctic Liquid Freezer III 360',
@@ -197,7 +197,7 @@ class ProductSeeder extends Seeder
                 'quantity' => 5,
                 'reorder_level' => 6,
                 'unit_price' => 119.00,
-                'supplier' => 'Arctic Components',
+                'supplier' => 'Purok 3, Brgy. Sinawal',
             ],
             [
                 'name' => 'Logitech MX Master 3S Mouse',
@@ -208,7 +208,7 @@ class ProductSeeder extends Seeder
                 'quantity' => 38,
                 'reorder_level' => 10,
                 'unit_price' => 99.00,
-                'supplier' => 'Logitech Supply',
+                'supplier' => 'Purok 6, Brgy. San Jose',
             ],
             [
                 'name' => 'Keychron K8 Pro Mechanical Keyboard',
@@ -219,7 +219,7 @@ class ProductSeeder extends Seeder
                 'quantity' => 9,
                 'reorder_level' => 8,
                 'unit_price' => 109.00,
-                'supplier' => 'Keychron Distribution',
+                'supplier' => 'Purok 4, Brgy. Siguel',
             ],
             [
                 'name' => 'TP-Link Archer AX3000 Router',
@@ -230,7 +230,7 @@ class ProductSeeder extends Seeder
                 'quantity' => 11,
                 'reorder_level' => 5,
                 'unit_price' => 89.00,
-                'supplier' => 'TP-Link Philippines',
+                'supplier' => 'Purok 9, Brgy. Apopong',
             ],
         ];
 

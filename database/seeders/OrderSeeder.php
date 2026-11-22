@@ -28,7 +28,7 @@ class OrderSeeder extends Seeder
         $orders = [
             [
                 'order_number' => 'DEMO-PO-2001',
-                'supplier' => 'NVIDIA Partner Supply',
+                'supplier' => 'Labangal Parts Depot',
                 'order_date' => now()->subDays(12)->toDateString(),
                 'expected_date' => now()->subDays(8)->toDateString(),
                 'status' => PurchaseOrder::STATUS_RECEIVED,
@@ -39,7 +39,7 @@ class OrderSeeder extends Seeder
             ],
             [
                 'order_number' => 'DEMO-PO-2002',
-                'supplier' => 'Lian Li Philippines',
+                'supplier' => 'Dadiangas West Components',
                 'order_date' => now()->subDays(6)->toDateString(),
                 'expected_date' => now()->subDays(2)->toDateString(),
                 'status' => PurchaseOrder::STATUS_RECEIVED,
@@ -50,7 +50,7 @@ class OrderSeeder extends Seeder
             ],
             [
                 'order_number' => 'DEMO-PO-2003',
-                'supplier' => 'Corsair Components',
+                'supplier' => 'Calumpang Computer Supply',
                 'order_date' => now()->subDays(1)->toDateString(),
                 'expected_date' => now()->addDays(4)->toDateString(),
                 'status' => PurchaseOrder::STATUS_DRAFT,
@@ -63,12 +63,31 @@ class OrderSeeder extends Seeder
         ];
 
         foreach ($orders as $data) {
-            if (PurchaseOrder::query()->where('order_number', $data['order_number'])->exists()) {
-                continue;
-            }
-
             $items = $data['items'];
             unset($data['items']);
+
+            $existing = PurchaseOrder::query()->where('order_number', $data['order_number'])->first();
+
+            if ($existing !== null) {
+                $existing->update([
+                    'supplier' => $data['supplier'],
+                    'notes' => $data['notes'],
+                ]);
+
+                InventoryTransaction::query()
+                    ->where('reference', $existing->order_number)
+                    ->update(['notes' => "Received from {$data['supplier']}"]);
+
+                ActivityLog::query()
+                    ->where('module', ActivityLog::MODULE_PURCHASE_ORDER)
+                    ->where('action', ActivityLog::ACTION_CREATED)
+                    ->where('subject_id', $existing->id)
+                    ->update([
+                        'description' => "Purchase order {$existing->order_number} was created for {$data['supplier']} with {$existing->items->count()} item(s).",
+                    ]);
+
+                continue;
+            }
 
             $order = DB::transaction(function () use ($data, $items, $user) {
                 $order = PurchaseOrder::create($data + ['user_id' => $user?->id]);
@@ -133,7 +152,7 @@ class OrderSeeder extends Seeder
         $orders = [
             [
                 'order_number' => 'DEMO-SO-1001',
-                'customer' => 'Makati PC Center',
+                'customer' => 'Purok 2, Brgy. Dadiangas East',
                 'order_date' => now()->subDays(10)->toDateString(),
                 'due_date' => now()->subDays(7)->toDateString(),
                 'status' => SalesOrder::STATUS_COMPLETED,
@@ -144,7 +163,7 @@ class OrderSeeder extends Seeder
             ],
             [
                 'order_number' => 'DEMO-SO-1002',
-                'customer' => 'Quezon City Gaming Hub',
+                'customer' => 'Purok 5, Brgy. Labangal',
                 'order_date' => now()->subDays(9)->toDateString(),
                 'due_date' => now()->subDays(6)->toDateString(),
                 'status' => SalesOrder::STATUS_COMPLETED,
@@ -155,7 +174,7 @@ class OrderSeeder extends Seeder
             ],
             [
                 'order_number' => 'DEMO-SO-1003',
-                'customer' => 'Online Store — Juan D.',
+                'customer' => 'Purok 1, Brgy. Lagao',
                 'order_date' => now()->subDays(5)->toDateString(),
                 'due_date' => now()->subDays(3)->toDateString(),
                 'status' => SalesOrder::STATUS_COMPLETED,
@@ -166,7 +185,7 @@ class OrderSeeder extends Seeder
             ],
             [
                 'order_number' => 'DEMO-SO-1004',
-                'customer' => 'Cebu Tech Partners',
+                'customer' => 'Purok 7, Brgy. Calumpang',
                 'order_date' => now()->subDays(3)->toDateString(),
                 'due_date' => now()->subDays(1)->toDateString(),
                 'status' => SalesOrder::STATUS_COMPLETED,
@@ -177,7 +196,7 @@ class OrderSeeder extends Seeder
             ],
             [
                 'order_number' => 'DEMO-SO-1005',
-                'customer' => 'Pasig Office Supplies',
+                'customer' => 'Purok 3, Brgy. San Isidro',
                 'order_date' => now()->subDays(1)->toDateString(),
                 'due_date' => now()->addDays(3)->toDateString(),
                 'status' => SalesOrder::STATUS_PENDING,
@@ -189,7 +208,7 @@ class OrderSeeder extends Seeder
             ],
             [
                 'order_number' => 'DEMO-SO-1006',
-                'customer' => 'Staff Desk — Walk-in',
+                'customer' => 'Purok 4, Brgy. City Heights',
                 'order_date' => now()->toDateString(),
                 'due_date' => now()->addDays(2)->toDateString(),
                 'status' => SalesOrder::STATUS_PENDING,
@@ -203,12 +222,33 @@ class OrderSeeder extends Seeder
         ];
 
         foreach ($orders as $data) {
-            if (SalesOrder::query()->where('order_number', $data['order_number'])->exists()) {
-                continue;
-            }
-
             $items = $data['items'];
             unset($data['items']);
+
+            $existing = SalesOrder::query()->where('order_number', $data['order_number'])->first();
+
+            if ($existing !== null) {
+                $existing->update([
+                    'customer' => $data['customer'],
+                    'notes' => $data['notes'],
+                ]);
+
+                if ($existing->isCompleted()) {
+                    InventoryTransaction::query()
+                        ->where('reference', $existing->order_number)
+                        ->update(['notes' => "Sold to {$data['customer']}"]);
+                }
+
+                ActivityLog::query()
+                    ->where('module', ActivityLog::MODULE_SALES_ORDER)
+                    ->where('action', ActivityLog::ACTION_CREATED)
+                    ->where('subject_id', $existing->id)
+                    ->update([
+                        'description' => "Sales order {$existing->order_number} was created for {$data['customer']} with {$existing->items->count()} item(s).",
+                    ]);
+
+                continue;
+            }
 
             $order = DB::transaction(function () use ($data, $items, $user) {
                 $order = SalesOrder::create($data + ['user_id' => $user?->id]);
