@@ -12,6 +12,11 @@
             <a href="{{ route('sales-orders.index') }}" class="btn btn-outline-secondary">
                 <i class="bi bi-arrow-left"></i> Back to list
             </a>
+            @if ($order->isCompleted())
+                <a href="{{ route('sales-orders.receipt', $order) }}" class="btn btn-outline-dark" target="_blank" rel="noopener">
+                    <i class="bi bi-receipt"></i> Receipt
+                </a>
+            @endif
             @can('create-orders')
                 @if ($order->isPending())
                     <a href="{{ route('sales-orders.edit', $order) }}" class="btn btn-outline-primary">

@@ -71,10 +71,10 @@ the generic hardware-store example. Lab 5 itself is left unchanged.
 | Theme integration | `public/css/app.css` CSS variables override Bootstrap defaults; same style on auth and app pages |
 | Stock audit trail | `inventory_transactions` table logs initial stock and quantity adjustments, shown on the product detail page |
 | Purchase orders | `PurchaseOrder` + `PurchaseOrderItem` with draft/received/cancelled statuses, multi-line items, edit/delete while draft, and **Receive stock** which writes one stock-in transaction per line through the observer so quantities and balances stay in sync; every staff/admin action sends a bell notification to the other role |
-| Sales orders | `SalesOrder` + `SalesOrderItem` with pending/approved/completed/cancelled statuses, stock-aware item form that lists only in-stock products, aggregated stock validation before approval and fulfilment, and **Complete order** which writes stock-out transactions through the same observer; every sales order needs admin approval and out-of-stock orders are rejected |
+| Sales orders | `SalesOrder` + `SalesOrderItem` with pending/approved/completed/cancelled statuses, stock-aware item form that lists only in-stock products, aggregated stock validation before approval and fulfilment, and **Complete order** which writes stock-out transactions through the same observer; every sales order needs admin approval and out-of-stock orders are rejected; completed orders get a printable sales receipt |
 | Activity log (audit log) | `ActivityLog` model and `activity-logs.index` page (ported from Lab 5) record sign-ins, registrations and every create/update/deactivate/restore action across products, categories, brands and users, with search and module/action/user filters and a recent-activity panel on the dashboard |
 | Inactive products | The delete action sets `status` to `inactive` instead of removing rows; products and inventory history stay in the database and can be restored |
-| Testing | 28 automated tests (12 inventory-tracking + 9 order-management + 6 role-access + 1 staff notification) plus browser verification of login, dashboard statistics, inventory overview, product/category/brand CRUD, inactive brand/category restore, user roles, inactive-user login rejection, transaction logging, reports, order approval/receive/complete flows, notification bells and deactivate/restore |
+| Testing | 29 automated tests (12 inventory-tracking + 10 order-management + 6 role-access + 1 staff notification) plus browser verification of login, dashboard statistics, inventory overview, product/category/brand CRUD, inactive brand/category restore, user roles, inactive-user login rejection, transaction logging, reports, order approval/receive/complete flows, printable receipts, notification bells and deactivate/restore |
 
 ## Important files
 
@@ -118,6 +118,7 @@ resources/views/dashboard/index.blade.php
 resources/views/activity-logs/*.blade.php
 resources/views/inventory/*.blade.php
 resources/views/products/*.blade.php
+resources/views/sales-orders/receipt.blade.php
 resources/views/brands/*.blade.php
 resources/views/categories/*.blade.php
 resources/views/users/*.blade.php
@@ -157,7 +158,7 @@ This folder extends the Lab 5 project with the real-time inventory features.
 | Activity Log | Still the audit log for sign-ins, registrations and every create/update/deactivate/restore across products, categories, brands and users, with the same search/module/action/user filters and dashboard panel. Lab 6 drops Lab 5's page-visit/search logging and adds order create/update/receive/approve/complete/cancel entries. |
 | Inactive records | Soft deactivate/restore is retained for products, brands and categories, and extended to user accounts with the inactive-login rejection. |
 | Seeder & theme | Same 20-product seeder and Green Rush theme. Added demo staff user, purchase/sales orders, staff low-stock alert and order notifications. |
-| Testing | Lab 5's browser checks were kept. Lab 6 adds 28 automated tests covering stock movements, orders, approvals, notifications and role permissions. |
+| Testing | Lab 5's browser checks were kept. Lab 6 adds 29 automated tests covering stock movements, orders, approvals, receipts, notifications and role permissions. |
 
 ### What was added
 
@@ -170,12 +171,13 @@ This folder extends the Lab 5 project with the real-time inventory features.
 | Product model helpers | `latestTransaction()`, `isLowStock()`, `isOutOfStock()`, `stock status/color` accessors, `lowStock()`, `outOfStock()` and `inCategory()` scopes |
 | Low stock notifications | Queued `LowStockNotification` (database + mail), `notifications` table, role-based recipients (admin/manager/staff) and hour-long dedupe; bell dropdown with unread count, mark-as-read and a seeded staff example |
 | Order action notifications | `OrderActionNotification` plus `NotifiesOrderActions`; staff purchase-order and sales-order actions notify admins, and admin/manager actions notify staff in the same bell dropdown |
+| Sales receipt | `GET /sales-orders/{salesOrder}/receipt` renders a print-only receipt for completed orders with customer, dates, preparer/approver, item lines and total paid; the button is hidden for pending or approved orders |
 | Roles | `role` column on `users` with `admin`, `manage-users`, `manage-inventory`, `create-orders`, `fulfil-orders` and `export-reports` Gates; admin manages accounts and approves every sales order, admin/manager manage stock and fulfil orders, staff can draft orders, and plain users are read-only |
 | Real-time dashboard | `GET /api/dashboard/stats`, `/api/products/low-stock`, `/api/transactions/recent` with API Resources; `public/js/dashboard.js` polls every 30 seconds and animates value changes |
 | Adjustments | `GET/POST /transactions/adjust` calculates the difference between system and physical count and writes an adjustment transaction |
 | Product history & reports | Running balance and date filter on the product page; `reports.index` with stock movement, low stock and valuation sections plus CSV export |
 | Malformed URL handling | Root `server.php` router plus a `NotFoundHttpException` handler: slash/dot combos such as `//////.......//////` and random elements appended to a link return to the current page instead of a 404 |
-| Tests | 28 automated tests covering inventory tracking, purchase/sales orders, admin approval, notifications and role permissions |
+| Tests | 29 automated tests covering inventory tracking, purchase/sales orders, admin approval, receipts, notifications and role permissions |
 
 ### Running Lab 6
 

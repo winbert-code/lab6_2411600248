@@ -116,6 +116,15 @@ class SalesOrderController extends Controller
         return view('sales-orders.show', ['order' => $salesOrder]);
     }
 
+    public function receipt(SalesOrder $salesOrder): View
+    {
+        abort_unless($salesOrder->isCompleted(), 403, 'A receipt is only available for completed sales orders.');
+
+        $salesOrder->load(['items.product', 'user', 'approvedBy']);
+
+        return view('sales-orders.receipt', ['order' => $salesOrder]);
+    }
+
     public function edit(SalesOrder $salesOrder): View
     {
         abort_unless($salesOrder->isPending(), 403, 'Only pending sales orders can be edited.');

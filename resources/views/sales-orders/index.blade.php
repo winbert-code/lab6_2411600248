@@ -82,6 +82,11 @@
                                 <a href="{{ route('sales-orders.show', $order) }}" class="btn btn-sm btn-outline-primary">
                                     <i class="bi bi-eye"></i>
                                 </a>
+                                @if ($order->isCompleted())
+                                    <a href="{{ route('sales-orders.receipt', $order) }}" class="btn btn-sm btn-outline-dark" target="_blank" rel="noopener" title="Print receipt">
+                                        <i class="bi bi-receipt"></i>
+                                    </a>
+                                @endif
                                 @can('create-orders')
                                     @if ($order->isPending())
                                         <a href="{{ route('sales-orders.edit', $order) }}" class="btn btn-sm btn-outline-secondary">

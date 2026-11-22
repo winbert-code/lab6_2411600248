@@ -322,4 +322,48 @@ class OrderManagementTest extends TestCase
             fn (OrderActionNotification $notification) => $notification->module === 'Sales order'
                 && $notification->action === 'approved');
     }
+
+    public function test_receipt_is_available_only_for_completed_sales_orders(): void
+    {
+        $order = SalesOrder::create([
+            'order_number' => 'SO-TEST-005',
+            'customer' => 'Receipt Customer',
+            'order_date' => now()->toDateString(),
+            'status' => SalesOrder::STATUS_PENDING,
+            'user_id' => $this->user->id,
+        ]);
+        $order->items()->create([
+            'product_id' => $this->product->id,
+            'quantity' => 2,
+            'unit_price' => 150.00,
+        ]);
+
+        $staff = User::forceCreate([
+            'name' => 'Staff User',
+            'email' => 'staff@example.test',
+            'password' => bcrypt('password123'),
+            'role' => User::ROLE_STAFF,
+            'status' => User::STATUS_ACTIVE,
+        ]);
+
+        $this->actingAs($this->user);
+
+        $this->get(route('sales-orders.receipt', $order))->assertForbidden();
+
+        $this->post(route('sales-orders.approve', $order))
+            ->assertRedirect(route('sales-orders.show', $order));
+        $this->post(route('sales-orders.complete', $order))
+            ->assertRedirect(route('sales-orders.show', $order));
+
+        $this->get(route('sales-orders.receipt', $order))
+            ->assertOk()
+            ->assertSee('Sales Receipt')
+            ->assertSee($order->order_number)
+            ->assertSee($this->product->name)
+            ->assertSee('300.00');
+
+        $this->actingAs($staff)
+            ->get(route('sales-orders.receipt', $order))
+            ->assertOk();
+    }
 }

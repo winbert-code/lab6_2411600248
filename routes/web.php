@@ -114,6 +114,7 @@ Route::middleware('auth')->group(function () {
         Route::patch('sales-orders/{salesOrder}', [SalesOrderController::class, 'update'])->name('sales-orders.update');
     });
     Route::get('sales-orders/{salesOrder}', [SalesOrderController::class, 'show'])->name('sales-orders.show');
+    Route::get('sales-orders/{salesOrder}/receipt', [SalesOrderController::class, 'receipt'])->name('sales-orders.receipt');
     Route::post('sales-orders/{salesOrder}/approve', [SalesOrderController::class, 'approve'])
         ->middleware('can:admin')
         ->name('sales-orders.approve');
