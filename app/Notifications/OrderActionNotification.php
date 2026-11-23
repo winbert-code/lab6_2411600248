@@ -13,6 +13,7 @@ class OrderActionNotification extends Notification
         public readonly string $action,
         public readonly User $actor,
         public readonly ?string $url = null,
+        public readonly bool $forCreator = false,
     ) {}
 
     /** @return array<int, string> */
@@ -27,8 +28,12 @@ class OrderActionNotification extends Notification
         $module = strtolower($this->module);
 
         return [
-            'title' => "{$this->module} {$this->action}: {$this->orderNumber}",
-            'message' => "{$this->actor->name} {$this->action} {$module} {$this->orderNumber}.",
+            'title' => $this->forCreator
+                ? "Your {$module} {$this->action}: {$this->orderNumber}"
+                : "{$this->module} {$this->action}: {$this->orderNumber}",
+            'message' => $this->forCreator
+                ? "{$this->actor->name} {$this->action} your {$module} {$this->orderNumber}."
+                : "{$this->actor->name} {$this->action} {$module} {$this->orderNumber}.",
             'module' => $this->module,
             'order_number' => $this->orderNumber,
             'action' => $this->action,

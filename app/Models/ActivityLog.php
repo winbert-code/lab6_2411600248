@@ -47,6 +47,8 @@ class ActivityLog extends Model
 
     public const ACTION_CANCELLED = 'Cancelled';
 
+    public const ACTION_REJECTED = 'Rejected';
+
     public const MODULES = [
         self::MODULE_AUTH,
         self::MODULE_PRODUCT,
@@ -69,6 +71,7 @@ class ActivityLog extends Model
         self::ACTION_APPROVED,
         self::ACTION_COMPLETED,
         self::ACTION_CANCELLED,
+        self::ACTION_REJECTED,
     ];
 
     protected $fillable = [
@@ -136,7 +139,7 @@ class ActivityLog extends Model
     public function badgeClass(): string
     {
         return match ($this->action) {
-            self::ACTION_DEACTIVATED, self::ACTION_LOGGED_OUT, self::ACTION_CANCELLED => 'badge-inactive',
+            self::ACTION_DEACTIVATED, self::ACTION_LOGGED_OUT, self::ACTION_CANCELLED, self::ACTION_REJECTED => 'badge-inactive',
             self::ACTION_UPDATED => 'bg-secondary',
             default => 'bg-success',
         };

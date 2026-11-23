@@ -320,7 +320,66 @@ class OrderManagementTest extends TestCase
 
         Notification::assertSentTo($staff, OrderActionNotification::class,
             fn (OrderActionNotification $notification) => $notification->module === 'Sales order'
-                && $notification->action === 'approved');
+                && $notification->action === 'approved'
+                && $notification->forCreator
+                && $notification->toArray($staff)['title'] === 'Your sales order approved: '.$order->order_number);
+    }
+
+    public function test_admin_rejection_notifies_only_the_staff_creator(): void
+    {
+        Notification::fake();
+
+        $creator = User::forceCreate([
+            'name' => 'Order Creator',
+            'email' => 'creator@example.test',
+            'password' => bcrypt('password123'),
+            'role' => User::ROLE_STAFF,
+            'status' => User::STATUS_ACTIVE,
+        ]);
+
+        $otherStaff = User::forceCreate([
+            'name' => 'Other Staff',
+            'email' => 'other-staff@example.test',
+            'password' => bcrypt('password123'),
+            'role' => User::ROLE_STAFF,
+            'status' => User::STATUS_ACTIVE,
+        ]);
+
+        $this->actingAs($creator)
+            ->post(route('sales-orders.store'), [
+                'customer' => 'Rejected Customer',
+                'order_date' => now()->toDateString(),
+                'items' => [[
+                    'product_id' => $this->product->id,
+                    'quantity' => 1,
+                    'unit_price' => 150.00,
+                ]],
+            ])
+            ->assertRedirect();
+
+        $order = SalesOrder::query()->where('customer', 'Rejected Customer')->firstOrFail();
+
+        Notification::fake();
+
+        $this->actingAs($this->user)
+            ->post(route('sales-orders.cancel', $order))
+            ->assertRedirect(route('sales-orders.show', $order));
+
+        $this->assertSame(SalesOrder::STATUS_CANCELLED, $order->fresh()->status);
+
+        Notification::assertSentTo($creator, OrderActionNotification::class,
+            fn (OrderActionNotification $notification) => $notification->module === 'Sales order'
+                && $notification->action === 'rejected'
+                && $notification->forCreator
+                && $notification->toArray($creator)['title'] === 'Your sales order rejected: '.$order->order_number);
+
+        Notification::assertNotSentTo($otherStaff, OrderActionNotification::class);
+
+        $this->assertDatabaseHas('activity_logs', [
+            'module' => ActivityLog::MODULE_SALES_ORDER,
+            'action' => ActivityLog::ACTION_REJECTED,
+            'subject_id' => $order->id,
+        ]);
     }
 
     public function test_receipt_is_available_only_for_completed_sales_orders(): void

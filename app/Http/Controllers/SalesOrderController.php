@@ -254,9 +254,8 @@ class SalesOrderController extends Controller
             $salesOrder,
         );
 
-        $this->notifyOppositeRole(
-            'Sales order',
-            $salesOrder->order_number,
+        $this->notifyOrderCreator(
+            $salesOrder,
             'approved',
             auth()->user(),
             route('sales-orders.show', $salesOrder),
@@ -321,25 +320,29 @@ class SalesOrderController extends Controller
     {
         abort_unless($salesOrder->isPending() || $salesOrder->isApproved(), 403, 'Only pending or approved sales orders can be cancelled.');
 
+        $wasPending = $salesOrder->isPending();
+        $action = $wasPending ? 'rejected' : 'cancelled';
+
         $salesOrder->update(['status' => SalesOrder::STATUS_CANCELLED]);
 
         ActivityLog::record(
             ActivityLog::MODULE_SALES_ORDER,
-            ActivityLog::ACTION_CANCELLED,
-            "Sales order {$salesOrder->order_number} was cancelled.",
+            $wasPending ? ActivityLog::ACTION_REJECTED : ActivityLog::ACTION_CANCELLED,
+            "Sales order {$salesOrder->order_number} was {$action} by ".auth()->user()->name.'.',
             $salesOrder,
         );
 
-        $this->notifyOppositeRole(
-            'Sales order',
-            $salesOrder->order_number,
-            'cancelled',
+        $this->notifyOrderCreator(
+            $salesOrder,
+            $action,
             auth()->user(),
             route('sales-orders.show', $salesOrder),
         );
 
         return redirect()->route('sales-orders.show', $salesOrder)
-            ->with('success', 'Sales order cancelled.');
+            ->with('success', $wasPending
+                ? 'Sales order rejected. The staff member who created it has been notified.'
+                : 'Sales order cancelled. The staff member who created it has been notified.');
     }
 
     private function stockErrorFor(SalesOrder $salesOrder): ?string

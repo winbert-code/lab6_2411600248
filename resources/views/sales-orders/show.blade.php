@@ -32,9 +32,18 @@
                         <button class="btn btn-primary" type="submit"><i class="bi bi-check2-circle"></i> Approve order</button>
                     </form>
                 @endif
-                @if ($order->isPending() || $order->isApproved())
+                @if ($order->isPending())
                     <form method="POST" action="{{ route('sales-orders.cancel', $order) }}"
-                          onsubmit="return confirm('Cancel this sales order?')">
+                          onsubmit="return confirm('Reject this sales order? The staff member who created it will be notified.')">
+                        @csrf
+                        <button class="btn btn-outline-danger" type="submit">
+                            <i class="bi bi-x-circle"></i> Reject order
+                        </button>
+                    </form>
+                @endif
+                @if ($order->isApproved())
+                    <form method="POST" action="{{ route('sales-orders.cancel', $order) }}"
+                          onsubmit="return confirm('Cancel this approved sales order? The staff member who created it will be notified.')">
                         @csrf
                         <button class="btn btn-outline-warning" type="submit">Cancel order</button>
                     </form>
