@@ -9,6 +9,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\InventoryTransactionController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\ReportController;
@@ -32,6 +33,10 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Every signed-in user may maintain their own name, email and password.
+    Route::get('profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('profile', [ProfileController::class, 'update'])->name('profile.update');
 
     /*
      * Role limits:
@@ -86,9 +91,14 @@ Route::middleware('auth')->group(function () {
     Route::patch('notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
 
     Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
-    Route::get('reports/export', [ReportController::class, 'export'])
-        ->middleware('can:export-reports')
-        ->name('reports.export');
+
+    // Product report is available to staff as well; order and daily history are management reports.
+    Route::get('reports/products', [ReportController::class, 'products'])->name('reports.products');
+    Route::middleware('can:export-reports')->group(function () {
+        Route::get('reports/orders', [ReportController::class, 'orders'])->name('reports.orders');
+        Route::get('reports/daily', [ReportController::class, 'daily'])->name('reports.daily');
+        Route::get('reports/export', [ReportController::class, 'export'])->name('reports.export');
+    });
 
     // Sales receipts: read-only list of completed orders for every signed-in user.
     Route::get('receipts', [SalesOrderController::class, 'receipts'])->name('receipts.index');

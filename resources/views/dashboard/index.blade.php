@@ -129,12 +129,17 @@
             </div>
             <div class="col-12 col-md-4">
                 <div class="card app-card h-100">
-                    <div class="card-body d-flex justify-content-between align-items-center">
-                        <div>
-                            <p class="stat-label mb-1">Reports</p>
-                            <h3 class="h4 mb-0"><a href="{{ route('reports.index') }}" class="text-decoration-none">Open reports <i class="bi bi-arrow-up-right"></i></a></h3>
+                    <div class="card-body">
+                        <p class="stat-label mb-2">Reports</p>
+                        <div class="d-flex flex-column gap-1 small">
+                            <a href="{{ route('reports.index') }}" class="text-decoration-none">Inventory reports</a>
+                            <a href="{{ route('reports.products') }}" class="text-decoration-none">Product report</a>
+                            <a href="{{ route('products.index') }}" class="text-decoration-none">Product history</a>
+                            @can('export-reports')
+                                <a href="{{ route('reports.orders') }}" class="text-decoration-none">Sales &amp; purchase report</a>
+                                <a href="{{ route('reports.daily') }}" class="text-decoration-none">Daily report history</a>
+                            @endcan
                         </div>
-                        <span class="stat-icon icon-warning"><i class="bi bi-file-earmark-bar-graph"></i></span>
                     </div>
                 </div>
             </div>

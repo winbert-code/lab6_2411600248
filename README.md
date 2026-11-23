@@ -63,9 +63,9 @@ the generic hardware-store example. Lab 5 itself is left unchanged.
 | Brands & categories | First-class `brands` and `categories` tables with their own pages under **Brands** and **Categories**; removing an item marks it inactive (never deletes it), and the restore button makes it available for stock again; inactive items are hidden from new-product dropdowns but kept for products already using them |
 | CRUD controller | `app\Http\Controllers\ProductController.php` (resource controller with implicit route binding) |
 | Validation | `StoreProductRequest` / `UpdateProductRequest` with custom messages, SKU uniqueness on create/update, normalized uppercase SKU, active brand/category validation |
-| Navigation | Dashboard, Inventory (stock overview), Products (CRUD + deactivate/restore), Purchase Orders, Sales Orders, Receipts, Categories (CRUD + deactivate/restore), Brands (CRUD + deactivate/restore), Users (admin only), Activity Log, Transactions, Reports |
-| Blade views | `layouts/app`, `layouts/guest`, dashboard, inventory, product index/create/edit/show, purchase/sales order index/form/show, sales receipt list/detail, category/brand/user CRUD views, activity log, reusable `components/stock-badge`, shared form partials |
-| Routes | `routes/web.php`: guest auth routes + auth-protected dashboard, inventory, resource routes for products, categories, brands and users, plus purchase/sales orders, sales receipts, activity log, transactions, reports and notifications |
+| Navigation | Dashboard, Inventory (stock overview), Products (CRUD + deactivate/restore), Purchase Orders, Sales Orders, Receipts, Categories (CRUD + deactivate/restore), Brands (CRUD + deactivate/restore), Users (admin only), Activity Log, Transactions, Reports and the My Profile menu link |
+| Blade views | `layouts/app`, `layouts/guest`, dashboard, inventory, product index/create/edit/show, purchase/sales order index/form/show, sales receipt list/detail, category/brand/user CRUD views, activity log, product/sales-purchase/daily reports, profile, reusable `components/stock-badge`, shared form partials |
+| Routes | `routes/web.php`: guest auth routes + auth-protected dashboard, inventory, resource routes for products, categories, brands and users, plus purchase/sales orders, sales receipts, activity log, transactions, product/order/daily reports, profile and notifications |
 | Dashboard with real data | `DashboardController` computes product count, low/out-of-stock counts, total inventory value, recent products, category totals, and chart data |
 | Seeder | `ProductSeeder` inserts 20 realistic computer parts across 10 categories with General Santos City barangay/purok-based suppliers, including low-stock and out-of-stock examples; `UserSeeder` adds a demo staff account; `StaffNotificationSeeder` puts one example low-stock alert in that account's bell; `OrderSeeder` adds 3 demo purchase orders and 6 demo sales orders (draft/pending, a staff-pending order, plus received/completed) with General Santos City barangay/purok-based supplier and customer names, and reuses matching demo stock movements so stock is not deducted twice |
 | Theme integration | `public/css/app.css` CSS variables override Bootstrap defaults; same style on auth and app pages |
@@ -74,7 +74,9 @@ the generic hardware-store example. Lab 5 itself is left unchanged.
 | Sales orders | `SalesOrder` + `SalesOrderItem` with pending/approved/completed/cancelled statuses, stock-aware item form that lists only in-stock products, aggregated stock validation before approval and fulfilment, and **Complete order** which writes stock-out transactions through the same observer; every sales order needs admin approval and out-of-stock orders are rejected; completed orders get a view-only sales receipt |
 | Activity log (audit log) | `ActivityLog` model and `activity-logs.index` page (ported from Lab 5) record sign-ins, registrations and every create/update/deactivate/restore action across products, categories, brands and users, with search and module/action/user filters and a recent-activity panel on the dashboard |
 | Inactive products | The delete action sets `status` to `inactive` instead of removing rows; products and inventory history stay in the database and can be restored |
-| Testing | 29 automated tests (12 inventory-tracking + 10 order-management + 6 role-access + 1 staff notification) plus browser verification of login, dashboard statistics, inventory overview, product/category/brand CRUD, inactive brand/category restore, user roles, inactive-user login rejection, transaction logging, reports, order approval/receive/complete flows, view-only receipts and receipt lists, notification bells and deactivate/restore |
+| Reports | Product report is available to staff and admins; sales &amp; purchase report and daily report history are management reports; the dashboard and Reports page link to product history and each report |
+| Profile | Every signed-in user can update their own name, email and password from My Profile; role and status changes stay admin-only |
+| Testing | 34 automated tests (12 inventory-tracking + 10 order-management + 6 role-access + 1 staff notification + 5 report/profile) plus browser verification of login, dashboard statistics, inventory overview, product/category/brand CRUD, inactive brand/category restore, user roles, inactive-user login rejection, transaction logging, reports, order approval/receive/complete flows, view-only receipts and receipt lists, notification bells and deactivate/restore |
 
 ## Important files
 
@@ -98,6 +100,8 @@ app/Http/Controllers/BrandController.php
 app/Http/Controllers/CategoryController.php
 app/Http/Controllers/UserController.php
 app/Http/Controllers/DashboardController.php
+app/Http/Controllers/ReportController.php
+app/Http/Controllers/ProfileController.php
 app/Http/Controllers/Auth/LoginController.php
 app/Http/Controllers/Auth/RegisterController.php
 app/Http/Requests/StoreProductRequest.php
@@ -123,6 +127,7 @@ resources/views/sales-orders/receipts.blade.php
 resources/views/brands/*.blade.php
 resources/views/categories/*.blade.php
 resources/views/users/*.blade.php
+resources/views/profile/*.blade.php
 resources/views/transactions/*.blade.php
 resources/views/reports/*.blade.php
 public/css/app.css
@@ -159,7 +164,7 @@ This folder extends the Lab 5 project with the real-time inventory features.
 | Activity Log | Still the audit log for sign-ins, registrations and every create/update/deactivate/restore across products, categories, brands and users, with the same search/module/action/user filters and dashboard panel. Lab 6 drops Lab 5's page-visit/search logging and adds order create/update/receive/approve/complete/cancel entries. |
 | Inactive records | Soft deactivate/restore is retained for products, brands and categories, and extended to user accounts with the inactive-login rejection. |
 | Seeder & theme | Same 20-product seeder and Green Rush theme. Added demo staff user, purchase/sales orders, staff low-stock alert and order notifications. |
-| Testing | Lab 5's browser checks were kept. Lab 6 adds 29 automated tests covering stock movements, orders, approvals, receipts, notifications and role permissions. |
+| Testing | Lab 5's browser checks were kept. Lab 6 adds 34 automated tests covering stock movements, orders, approvals, receipts, notifications, reports, profile updates and role permissions. |
 
 ### What was added
 
@@ -176,7 +181,8 @@ This folder extends the Lab 5 project with the real-time inventory features.
 | Roles | `role` column on `users` with `admin`, `manage-users`, `manage-inventory`, `create-orders`, `fulfil-orders` and `export-reports` Gates; admin manages accounts and approves every sales order, admin/manager manage stock and fulfil orders, staff can draft orders, and plain users are read-only |
 | Real-time dashboard | `GET /api/dashboard/stats`, `/api/products/low-stock`, `/api/transactions/recent` with API Resources; `public/js/dashboard.js` polls every 30 seconds and animates value changes |
 | Adjustments | `GET/POST /transactions/adjust` calculates the difference between system and physical count and writes an adjustment transaction |
-| Product history & reports | Running balance and date filter on the product page; `reports.index` with stock movement, low stock and valuation sections plus CSV export |
+| Product history & reports | Running balance and date filter on the product page; `reports.index` with stock movement, low stock and valuation sections plus CSV export; `reports.products` for per-product stock/value/movement totals; `reports.orders` for sales and purchase order totals; `reports.daily` for a day-by-day activity history. Dashboard and Reports pages link to each view. |
+| Self-service profile | `profile.edit` / `profile.update` let staff and other signed-in users change their own name, email and password without touching roles or status; changes are recorded in the Activity Log |
 | Malformed URL handling | Root `server.php` router plus a `NotFoundHttpException` handler: slash/dot combos such as `//////.......//////` and random elements appended to a link return to the current page instead of a 404 |
 | Tests | 29 automated tests covering inventory tracking, purchase/sales orders, admin approval, receipts, notifications and role permissions |
 

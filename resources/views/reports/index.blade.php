@@ -17,6 +17,28 @@
 
     <div class="card app-card mb-4">
         <div class="card-body">
+            <p class="stat-label mb-2">Report shortcuts</p>
+            <div class="d-flex flex-wrap gap-2">
+                <a href="{{ route('reports.products') }}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-box-seam"></i> Product report
+                </a>
+                <a href="{{ route('products.index') }}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-clock-history"></i> Product history
+                </a>
+                @can('export-reports')
+                    <a href="{{ route('reports.orders') }}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-cart-check"></i> Sales &amp; purchase report
+                    </a>
+                    <a href="{{ route('reports.daily') }}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-calendar-day"></i> Daily report history
+                    </a>
+                @endcan
+            </div>
+        </div>
+    </div>
+
+    <div class="card app-card mb-4">
+        <div class="card-body">
             <form method="GET" action="{{ route('reports.index') }}" class="row g-3 align-items-end">
                 <div class="col-auto">
                     <label for="from" class="form-label small fw-semibold">From</label>
